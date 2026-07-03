@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { Palette, radius, spacing } from './theme';
 import { useTheme } from './ThemeContext';
+import { Icon, IconName } from './Icon';
 
 export function Card({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
   const { colors } = useTheme();
@@ -21,11 +22,13 @@ export function Button({
   onPress,
   variant = 'primary',
   small,
+  icon,
 }: {
   label: string;
   onPress: () => void;
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   small?: boolean;
+  icon?: IconName;
 }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -55,6 +58,7 @@ export function Button({
         variant === 'ghost' && styles.buttonGhost,
       ]}
     >
+      {icon && <Icon name={icon} size={small ? 15 : 17} color={fg} strokeWidth={2} />}
       <Text style={[styles.buttonText, { color: fg }, small && { fontSize: 13 }]}>{label}</Text>
     </Pressable>
   );
@@ -107,6 +111,8 @@ const makeStyles = (colors: Palette) =>
       paddingVertical: spacing(3),
       paddingHorizontal: spacing(4),
       borderRadius: radius.sm,
+      flexDirection: 'row',
+      gap: spacing(2),
       alignItems: 'center',
       justifyContent: 'center',
     },

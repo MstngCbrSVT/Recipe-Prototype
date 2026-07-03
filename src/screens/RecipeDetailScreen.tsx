@@ -7,6 +7,7 @@ import { findVideos } from '../data/influencers';
 import { buildTimeline } from '../engine/timeline';
 import { mealActiveMinutes } from '../engine/planner';
 import { Button, Card } from '../ui/components';
+import { Icon, recipeIconName } from '../ui/Icon';
 import { Palette, radius, spacing } from '../ui/theme';
 import { useTheme } from '../ui/ThemeContext';
 
@@ -45,7 +46,10 @@ export function RecipeDetailScreen({ date, onClose }: { date: string; onClose: (
         </Card>
 
         {/* Coordinated timeline — the differentiator */}
-        <Text style={styles.sectionTitle}>🕑 Cook it all together</Text>
+        <View style={styles.sectionHead}>
+          <Icon name="clock" size={19} color={colors.text} strokeWidth={2} />
+          <Text style={styles.sectionTitle}>Cook it all together</Text>
+        </View>
         <Text style={styles.sectionSub}>
           One timeline for every dish so it all finishes at once.
         </Text>
@@ -59,7 +63,7 @@ export function RecipeDetailScreen({ date, onClose }: { date: string; onClose: (
               <View style={{ flex: 1 }}>
                 <Text style={styles.stepText}>{e.text}</Text>
                 <Text style={styles.stepRecipe}>
-                  {e.emoji} {e.recipeTitle}
+                  {e.recipeTitle}
                   {!e.active ? ' · hands-off' : ''}
                 </Text>
               </View>
@@ -71,17 +75,22 @@ export function RecipeDetailScreen({ date, onClose }: { date: string; onClose: (
             </View>
             <View style={dotStyle(true, colors)} />
             <Text style={[styles.stepText, { fontWeight: '800', color: colors.accent }]}>
-              🍽️ Serve — everything's ready
+              Serve — everything's ready
             </Text>
           </View>
         </Card>
 
         {/* Per-recipe detail */}
-        <Text style={styles.sectionTitle}>📋 Recipes</Text>
+        <View style={styles.sectionHead}>
+          <Icon name="list" size={19} color={colors.text} strokeWidth={2} />
+          <Text style={styles.sectionTitle}>Recipes</Text>
+        </View>
         {recipes.map((r) => (
           <Card key={r.id} style={{ marginTop: spacing(3) }}>
             <View style={styles.recipeHeader}>
-              <Text style={{ fontSize: 30, marginRight: spacing(2) }}>{r.emoji}</Text>
+              <View style={styles.recipeThumb}>
+                <Icon name={recipeIconName(r)} size={22} color={colors.primary} />
+              </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.recipeTitle}>{r.title}</Text>
                 <Text style={styles.recipeMeta}>
@@ -96,7 +105,8 @@ export function RecipeDetailScreen({ date, onClose }: { date: string; onClose: (
                 onPress={() => r.source?.videoUrl && Linking.openURL(r.source.videoUrl)}
                 style={styles.creatorPill}
               >
-                <Text style={styles.creatorText}>▶️ Inspired by {r.source.creator} — watch</Text>
+                <Icon name="play" size={13} color={colors.primaryDark} />
+                <Text style={styles.creatorText}>Inspired by {r.source.creator} — watch</Text>
               </Pressable>
             )}
 
@@ -119,16 +129,19 @@ export function RecipeDetailScreen({ date, onClose }: { date: string; onClose: (
         {/* Influencer videos — deep-link to a pro's take on the main dish */}
         {recipes[0] && (
           <>
-            <Text style={[styles.sectionTitle, { marginTop: spacing(5) }]}>
-              ▶️ Watch a pro make it
-            </Text>
+            <View style={[styles.sectionHead, { marginTop: spacing(5) }]}>
+              <Icon name="play" size={18} color={colors.text} />
+              <Text style={styles.sectionTitle}>Watch a pro make it</Text>
+            </View>
             <Text style={styles.sectionSub}>
               Similar recipes from food creators — opens YouTube.
             </Text>
             {findVideos(recipes[0]).map((v, i) => (
               <Pressable key={i} onPress={() => Linking.openURL(v.searchUrl)}>
                 <Card style={{ marginTop: spacing(2), flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={{ fontSize: 24, marginRight: spacing(3) }}>▶️</Text>
+                  <View style={styles.videoThumb}>
+                    <Icon name="play" size={16} color={colors.primary} />
+                  </View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.videoCreator}>{v.creator}</Text>
                     <Text style={styles.videoQuery}>“{v.query}”</Text>
@@ -149,7 +162,7 @@ function Header({ onClose }: { onClose: () => void }) {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.header}>
-      <Button label="✕ Close" onPress={onClose} variant="ghost" small />
+      <Button label="Close" icon="close" onPress={onClose} variant="ghost" small />
     </View>
   );
 }
@@ -182,8 +195,17 @@ const makeStyles = (colors: Palette) =>
     summaryTitle: { color: colors.onPrimary, fontSize: 14, fontWeight: '600', opacity: 0.9 },
     summaryTime: { color: colors.onPrimary, fontSize: 44, fontWeight: '900', marginTop: spacing(1) },
     summarySub: { color: colors.onPrimary, fontSize: 13, opacity: 0.9 },
+    sectionHead: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
     sectionTitle: { fontSize: 20, fontWeight: '800', color: colors.text },
     sectionSub: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+    recipeThumb: {
+      width: 42, height: 42, borderRadius: 11, backgroundColor: colors.chipBg,
+      alignItems: 'center', justifyContent: 'center', marginRight: spacing(2),
+    },
+    videoThumb: {
+      width: 40, height: 40, borderRadius: 11, backgroundColor: colors.chipBg,
+      alignItems: 'center', justifyContent: 'center', marginRight: spacing(3),
+    },
     timelineRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing(3) },
     timeCol: { width: 48 },
     timeText: { fontSize: 13, fontWeight: '800', color: colors.primary },
@@ -202,6 +224,9 @@ const makeStyles = (colors: Palette) =>
     ingredient: { fontSize: 14, color: colors.text, lineHeight: 22 },
     stepDur: { color: colors.textMuted, fontSize: 12 },
     creatorPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing(2),
       backgroundColor: colors.chipBg,
       borderRadius: radius.sm,
       padding: spacing(2),

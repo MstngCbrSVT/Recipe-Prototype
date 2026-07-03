@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { usePlan } from '../context/PlanContext';
 import { AISLE_ORDER, buildShoppingList, itemKey } from '../engine/shopping';
 import { Card } from '../ui/components';
+import { Icon } from '../ui/Icon';
 import { Palette, spacing } from '../ui/theme';
 import { useTheme } from '../ui/ThemeContext';
 
@@ -63,7 +64,7 @@ export function ShoppingScreen() {
                     ]}
                   >
                     <View style={[styles.checkbox, item.checked && styles.checkboxOn]}>
-                      {item.checked && <Text style={styles.check}>✓</Text>}
+                      {item.checked && <Icon name="check" size={14} color={colors.onAccent} strokeWidth={3} />}
                     </View>
                     <Text style={[styles.itemText, item.checked && styles.itemChecked]}>
                       {formatQty(item.qty)} {item.unit} {item.name}

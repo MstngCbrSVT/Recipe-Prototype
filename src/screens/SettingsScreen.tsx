@@ -34,9 +34,9 @@ const LEFTOVER_OPTS: { v: LeftoversPref; label: string }[] = [
   { v: 'yes', label: 'Yes' }, { v: 'some', label: 'Sometimes' }, { v: 'no', label: 'No' },
 ];
 const THEME_MODES: { mode: ThemeMode; label: string }[] = [
-  { mode: 'auto', label: '📱 Auto' },
-  { mode: 'light', label: '☀️ Garden (light)' },
-  { mode: 'dark', label: '🌙 Midnight (dark)' },
+  { mode: 'auto', label: 'Auto' },
+  { mode: 'light', label: 'Garden (light)' },
+  { mode: 'dark', label: 'Midnight (dark)' },
 ];
 
 export function SettingsScreen() {
@@ -111,7 +111,7 @@ export function SettingsScreen() {
 
       {/* Allergies */}
       <Card style={{ marginTop: spacing(4) }}>
-        <Text style={styles.label}>⚠️ Any allergies? We'll never suggest these.</Text>
+        <Text style={styles.label}>Any allergies? We'll never suggest these.</Text>
         <View style={styles.chipWrap}>
           {ALLERGENS.map((a) => (
             <Chip key={a} label={a} active={prefs.avoidAllergens.includes(a)} onPress={() => update({ avoidAllergens: toggleIn(prefs.avoidAllergens, a) })} />
@@ -172,7 +172,7 @@ export function SettingsScreen() {
           </Card>
 
           <Card style={{ marginTop: spacing(3) }}>
-            <Text style={styles.label}>🔑 Spoonacular (free tier)</Text>
+            <Text style={styles.label}>Spoonacular (free tier)</Text>
             <Text style={styles.hint}>
               Optional. Paste your key and load live recipes — they're merged with the built-in
               library and cached, so a single fetch (2 API calls) covers all your planning. You can
@@ -189,7 +189,8 @@ export function SettingsScreen() {
               placeholderTextColor={colors.textMuted}
             />
             <Button
-              label={recipeStatus.loading ? '⏳ Loading…' : '⬇️ Save key & load recipes'}
+              label={recipeStatus.loading ? 'Loading…' : 'Save key & load recipes'}
+              icon={recipeStatus.loading ? 'refresh' : 'key'}
               small
               onPress={async () => {
                 update({ spoonacularApiKey: apiKey.trim() || undefined });
@@ -205,7 +206,7 @@ export function SettingsScreen() {
           </Card>
 
           <View style={{ marginTop: spacing(4) }}>
-            <Button label="↻ Redo the intro" variant="ghost" onPress={() => update({ onboarded: false })} />
+            <Button label="Redo the intro" icon="refresh" variant="ghost" onPress={() => update({ onboarded: false })} />
           </View>
         </>
       )}

@@ -6,6 +6,7 @@ import { mealActiveMinutes, mealTotalMinutes } from '../engine/planner';
 import { canMakeLeftovers, dependentsOf } from '../engine/leftovers';
 import { DayPlan } from '../types';
 import { Button, Card } from '../ui/components';
+import { Icon, recipeIconName } from '../ui/Icon';
 import { Palette, radius, spacing } from '../ui/theme';
 import { useTheme } from '../ui/ThemeContext';
 
@@ -58,11 +59,11 @@ export function PlanScreen({ onOpenDay }: { onOpenDay: (date: string) => void })
     >
       <Text style={styles.h1}>This Week's Dinners</Text>
       <Text style={styles.sub}>
-        Tap a day for the cook plan. Lock 🔒 what you love. Cook once, eat twice with 🍲 Make extra.
+        Tap a day for the cook plan. Lock what you love, and cook once to eat twice with Make extra.
       </Text>
 
       <View style={{ marginVertical: spacing(3) }}>
-        <Button label="🎲 Regenerate whole week" onPress={generateWeek} variant="secondary" />
+        <Button label="Regenerate whole week" icon="dice" onPress={generateWeek} variant="secondary" />
       </View>
 
       {swapFrom && (
@@ -153,23 +154,36 @@ function DayCard({
     >
       <View style={styles.cardHeader}>
         <Text style={styles.dayLabel}>{label}</Text>
-        {day.locked && <Text style={styles.lockBadge}>🔒 Locked</Text>}
-        {isLeftover && <Text style={styles.leftoverBadge}>♻️ Leftovers</Text>}
+        {day.locked && (
+          <View style={styles.badgeRow}>
+            <Icon name="lock" size={12} color={colors.primaryDark} strokeWidth={2} />
+            <Text style={styles.lockBadge}>Locked</Text>
+          </View>
+        )}
+        {isLeftover && (
+          <View style={styles.badgeRow}>
+            <Icon name="refresh" size={12} color={colors.accent} strokeWidth={2} />
+            <Text style={styles.leftoverBadge}>Leftovers</Text>
+          </View>
+        )}
         {dependents.length > 0 && (
-          <Text style={styles.batchBadge}>
-            🍲 Batch · covers {dependents.map((d) => shortDay(d.date)).join(', ')}
-          </Text>
+          <View style={styles.batchRow}>
+            <Icon name="pot" size={12} color={colors.accent} strokeWidth={2} />
+            <Text style={styles.batchBadge}>Batch · covers {dependents.map((d) => shortDay(d.date)).join(', ')}</Text>
+          </View>
         )}
       </View>
 
       {day.skipped ? (
         <View style={{ paddingVertical: spacing(2) }}>
-          <Text style={styles.skippedText}>🍽️ No cooking planned</Text>
+          <Text style={styles.skippedText}>No cooking planned</Text>
         </View>
       ) : isLeftover ? (
         <Pressable onPress={onOpen}>
           <View style={styles.mainRow}>
-            <Text style={styles.mainEmoji}>{main?.emoji ?? '♻️'}</Text>
+            <View style={styles.thumb}>
+              <Icon name={main ? recipeIconName(main) : 'refresh'} size={24} color={colors.primary} />
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.mainTitle}>{main?.title ?? 'Leftovers'}</Text>
               <Text style={styles.sides}>
@@ -181,15 +195,17 @@ function DayCard({
       ) : main ? (
         <Pressable onPress={onOpen}>
           <View style={styles.mainRow}>
-            <Text style={styles.mainEmoji}>{main.emoji}</Text>
+            <View style={styles.thumb}>
+              <Icon name={recipeIconName(main)} size={24} color={colors.primary} />
+            </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.mainTitle}>{main.title}</Text>
               <Text style={styles.sides}>
                 {day.sideIds.map((id) => recipeById(id)?.title).filter(Boolean).join(' · ')}
               </Text>
               <View style={styles.metaRow}>
-                <Text style={styles.metaPill}>⏱️ {total} min total</Text>
-                <Text style={styles.metaPillGhost}>🙌 {active} min hands-on</Text>
+                <Text style={styles.metaPill}>{total} min total</Text>
+                <Text style={styles.metaPillGhost}>{active} min hands-on</Text>
               </View>
             </View>
           </View>
@@ -203,33 +219,36 @@ function DayCard({
       <View style={styles.actions}>
         {isLeftover ? (
           <>
-            <Button label="🍳 Cook fresh instead" onPress={onCookFresh} variant="ghost" small />
-            <Button label="🚫 Skip" onPress={onSkip} variant="ghost" small />
+            <Button label="Cook fresh instead" icon="chef" onPress={onCookFresh} variant="ghost" small />
+            <Button label="Skip" icon="ban" onPress={onSkip} variant="ghost" small />
           </>
         ) : (
           <>
             <Button
-              label={day.locked ? '🔓 Unlock' : '🔒 Lock'}
+              label={day.locked ? 'Unlock' : 'Lock'}
+              icon={day.locked ? 'unlock' : 'lock'}
               onPress={onLock}
               variant="ghost"
               small
             />
             {!day.skipped && !day.locked && (
-              <Button label="🎲 New" onPress={onRegenerate} variant="ghost" small />
+              <Button label="New" icon="dice" onPress={onRegenerate} variant="ghost" small />
             )}
             {canExtend && (
-              <Button label="🍲 Make extra" onPress={onMakeLeftovers} variant="ghost" small />
+              <Button label="Make extra" icon="pot" onPress={onMakeLeftovers} variant="ghost" small />
             )}
             {!day.locked && (
               <Button
-                label={swapActive ? '↔️ Picking…' : '↔️ Swap'}
+                label={swapActive ? 'Picking…' : 'Swap'}
+                icon="swap"
                 onPress={onSwap}
                 variant="ghost"
                 small
               />
             )}
             <Button
-              label={day.skipped ? '↩️ Add meal' : '🚫 Skip'}
+              label={day.skipped ? 'Add meal' : 'Skip'}
+              icon={day.skipped ? 'plus' : 'ban'}
               onPress={onSkip}
               variant="ghost"
               small
@@ -247,11 +266,21 @@ const makeStyles = (colors: Palette) =>
     sub: { fontSize: 14, color: colors.textMuted, marginTop: spacing(1), lineHeight: 20 },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' },
     dayLabel: { fontSize: 15, fontWeight: '700', color: colors.primaryDark },
+    badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    batchRow: { flexDirection: 'row', alignItems: 'center', gap: 4, width: '100%', marginTop: 2 },
     lockBadge: { fontSize: 12, fontWeight: '700', color: colors.primaryDark },
     leftoverBadge: { fontSize: 12, fontWeight: '700', color: colors.accent },
-    batchBadge: { fontSize: 11, fontWeight: '700', color: colors.accent, width: '100%', marginTop: 2 },
+    batchBadge: { fontSize: 11, fontWeight: '700', color: colors.accent },
     mainRow: { flexDirection: 'row', marginTop: spacing(2), alignItems: 'flex-start' },
-    mainEmoji: { fontSize: 40, marginRight: spacing(3) },
+    thumb: {
+      width: 46,
+      height: 46,
+      borderRadius: 12,
+      backgroundColor: colors.chipBg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: spacing(3),
+    },
     mainTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
     sides: { fontSize: 14, color: colors.textMuted, marginTop: spacing(1) },
     metaRow: { flexDirection: 'row', marginTop: spacing(2), flexWrap: 'wrap' },

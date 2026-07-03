@@ -7,15 +7,16 @@ import { SettingsScreen } from './src/screens/SettingsScreen';
 import { RecipeDetailScreen } from './src/screens/RecipeDetailScreen';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { Loader } from './src/ui/components';
+import { Icon, IconName } from './src/ui/Icon';
 import { Palette, spacing } from './src/ui/theme';
 import { ThemeProvider, useTheme } from './src/ui/ThemeContext';
 
 type Tab = 'plan' | 'shopping' | 'settings';
 
-const TABS: { key: Tab; label: string; icon: string }[] = [
-  { key: 'plan', label: 'Plan', icon: '📅' },
-  { key: 'shopping', label: 'Shop', icon: '🛒' },
-  { key: 'settings', label: 'Prefs', icon: '⚙️' },
+const TABS: { key: Tab; label: string; icon: IconName }[] = [
+  { key: 'plan', label: 'Plan', icon: 'calendar' },
+  { key: 'shopping', label: 'Shop', icon: 'cart' },
+  { key: 'settings', label: 'Prefs', icon: 'sliders' },
 ];
 
 function Shell() {
@@ -41,7 +42,8 @@ function Shell() {
     <SafeAreaView style={styles.root}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <View style={styles.brandBar}>
-        <Text style={styles.brand}>🍳 MealMate</Text>
+        <Icon name="sprout" size={20} color={colors.primary} />
+        <Text style={styles.brand}>MealMate</Text>
       </View>
 
       <View style={{ flex: 1 }}>
@@ -53,7 +55,7 @@ function Shell() {
       <View style={styles.tabBar}>
         {TABS.map((t) => (
           <Pressable key={t.key} style={styles.tab} onPress={() => setTab(t.key)}>
-            <Text style={[styles.tabIcon, tab === t.key && styles.tabActive]}>{t.icon}</Text>
+            <Icon name={t.icon} size={23} color={tab === t.key ? colors.primary : colors.textMuted} strokeWidth={1.9} />
             <Text style={[styles.tabLabel, tab === t.key && styles.tabActive]}>{t.label}</Text>
           </Pressable>
         ))}
@@ -80,6 +82,9 @@ const makeStyles = (colors: Palette) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.bg },
     brandBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing(2),
       paddingHorizontal: spacing(4),
       paddingTop: spacing(2),
       paddingBottom: spacing(2),
