@@ -29,6 +29,14 @@ The app loads with a full week already generated — no sign-up, no setup.
   plus the whole-meal total time and hands-on time.
 - **Shopping list** — auto-aggregated from the week, scaled to your serving
   size, deduped by ingredient, and grouped by grocery aisle. Check items off.
+- **Leftovers / batch cooking** — on a reheat-friendly meal, tap **🍲 Make
+  extra** to cook once and cover the next day. The leftover day does no cooking
+  and adds nothing to the shopping list; the source day scales up to buy the
+  right amount once. **🍳 Cook fresh instead** undoes it.
+- **Watch a pro make it** — each recipe suggests similar videos from food
+  creators (Sam the Cooking Guy, Josh Weissman, Not Another Cooking Show, and
+  more), ranked by how well their specialties match the dish, and deep-links to
+  YouTube.
 - **Preferences** — dinners/week, servings, sides per meal, allergies (hard
   safety filter), and, under *Advanced*, diet style, side types to avoid, and
   proteins to skip.
@@ -97,12 +105,10 @@ side type, allergens (heuristic), and active-vs-passive steps. See
 
 ## Planned next (v2+)
 
-- **Influencer recipes** — the `Recipe.source` field already carries
-  `creator` / `videoUrl` (see the salmon recipe), and the detail screen links
-  out. v2 surfaces "find a similar recipe by Josh Weissman / Sam the Cooking
-  Guy" and deep-links to their video.
-- Pantry staples, leftovers/batch-cooking, nutrition summary, hands-free cook
-  mode with timers, household sharing, and grocery-delivery export.
+- Pantry staples, nutrition summary, hands-free cook mode with timers,
+  household sharing, and grocery-delivery export.
+- Swap the curated creator directory in `src/data/influencers.ts` for a real
+  influencer/video API — only `findVideos` changes.
 
 > This is a prototype: recipes are a small local seed set, and cook times are
 > illustrative.

@@ -79,6 +79,7 @@ export interface Recipe {
   activeMinutes: number; // hands-on time
   totalMinutes: number; // wall-clock time start to finish
   baseServings: number;
+  leftoverFriendly: boolean; // reheats well → good for batch cooking
   ingredients: Ingredient[];
   steps: Step[];
   provider: 'local' | 'spoonacular';
@@ -92,6 +93,10 @@ export interface DayPlan {
   sideIds: string[];
   locked: boolean; // locked meals survive "regenerate week" and persist
   skipped: boolean; // no cooking that day (eating out, leftovers)
+  // Batch cooking: when set, this day eats leftovers cooked on the referenced
+  // date. It does no cooking of its own and adds nothing new to the shopping
+  // list (the source day is scaled up to cover it).
+  leftoverOf?: string; // ISO date of the day the food was actually cooked
 }
 
 export interface Preferences {

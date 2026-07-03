@@ -159,6 +159,7 @@ function normalize(r: SpoonResult, role: 'main' | 'side'): Recipe | null {
     activeMinutes: steps.filter((s) => s.active).reduce((n, s) => n + s.durationMin, 0) || Math.round(total / 2),
     totalMinutes: total,
     baseServings: r.servings && r.servings > 0 ? r.servings : 4,
+    leftoverFriendly: role === 'main' && isLeftoverFriendly(r),
     ingredients,
     steps: steps.length ? steps : [{ text: 'See full recipe.', durationMin: total, active: true }],
     provider: 'spoonacular',
@@ -273,6 +274,14 @@ function pickEmoji(role: 'main' | 'side', protein?: Protein, sideType?: SideType
   return { vegetable: '🥦', fruit: '🍓', bread: '🍞', starch: '🍚', salad: '🥗', dairy: '🧀' }[
     sideType ?? 'vegetable'
   ];
+}
+
+// Dishes that reheat well are good candidates for batch cooking.
+const LEFTOVER_WORDS = /soup|stew|chili|curry|casserole|roast|braise|bake|chowder|sauce|bolognese|lasagna|meatball|pulled|slow.?cook|stir.?fry|fried rice|enchilada/i;
+
+function isLeftoverFriendly(r: SpoonResult): boolean {
+  const hay = `${r.title} ${(r.dishTypes ?? []).join(' ')}`;
+  return LEFTOVER_WORDS.test(hay);
 }
 
 function slug(title: string): string {

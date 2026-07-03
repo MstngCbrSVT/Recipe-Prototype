@@ -3,6 +3,7 @@ import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-na
 import { usePlan } from '../context/PlanContext';
 import { Recipe } from '../types';
 import { recipeById } from '../data/catalog';
+import { findVideos } from '../data/influencers';
 import { buildTimeline } from '../engine/timeline';
 import { mealActiveMinutes } from '../engine/planner';
 import { Button, Card } from '../ui/components';
@@ -111,6 +112,30 @@ export function RecipeDetailScreen({ date, onClose }: { date: string; onClose: (
             ))}
           </Card>
         ))}
+
+        {/* Influencer videos — deep-link to a pro's take on the main dish */}
+        {recipes[0] && (
+          <>
+            <Text style={[styles.sectionTitle, { marginTop: spacing(5) }]}>
+              ▶️ Watch a pro make it
+            </Text>
+            <Text style={styles.sectionSub}>
+              Similar recipes from food creators — opens YouTube.
+            </Text>
+            {findVideos(recipes[0]).map((v, i) => (
+              <Pressable key={i} onPress={() => Linking.openURL(v.searchUrl)}>
+                <Card style={{ marginTop: spacing(2), flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ fontSize: 24, marginRight: spacing(3) }}>▶️</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.videoCreator}>{v.creator}</Text>
+                    <Text style={styles.videoQuery}>“{v.query}”</Text>
+                  </View>
+                  <Text style={styles.videoGo}>Search ›</Text>
+                </Card>
+              </Pressable>
+            ))}
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -177,4 +202,7 @@ const styles = StyleSheet.create({
     marginTop: spacing(2),
   },
   creatorText: { color: colors.primaryDark, fontWeight: '700', fontSize: 13 },
+  videoCreator: { fontSize: 15, fontWeight: '700', color: colors.text },
+  videoQuery: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+  videoGo: { fontSize: 13, fontWeight: '700', color: colors.primary },
 });

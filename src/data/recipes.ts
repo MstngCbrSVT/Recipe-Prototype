@@ -17,6 +17,7 @@ export const MAINS: Recipe[] = [
     activeMinutes: 15,
     totalMinutes: 40,
     baseServings: 4,
+    leftoverFriendly: true,
     provider: 'local',
     ingredients: [
       { name: 'chicken thighs', qty: 1.5, unit: 'lb', aisle: 'Meat & Seafood' },
@@ -43,6 +44,7 @@ export const MAINS: Recipe[] = [
     activeMinutes: 20,
     totalMinutes: 25,
     baseServings: 4,
+    leftoverFriendly: true,
     provider: 'local',
     ingredients: [
       { name: 'ground beef', qty: 1, unit: 'lb', aisle: 'Meat & Seafood' },
@@ -69,6 +71,7 @@ export const MAINS: Recipe[] = [
     activeMinutes: 12,
     totalMinutes: 22,
     baseServings: 4,
+    leftoverFriendly: false,
     provider: 'local',
     source: { creator: 'Josh Weissman', videoUrl: 'https://youtube.com/@JoshuaWeissman' },
     ingredients: [
@@ -96,6 +99,7 @@ export const MAINS: Recipe[] = [
     activeMinutes: 18,
     totalMinutes: 22,
     baseServings: 4,
+    leftoverFriendly: true,
     provider: 'local',
     ingredients: [
       { name: 'pork loin', qty: 1, unit: 'lb', aisle: 'Meat & Seafood' },
@@ -122,6 +126,7 @@ export const MAINS: Recipe[] = [
     activeMinutes: 12,
     totalMinutes: 20,
     baseServings: 4,
+    leftoverFriendly: false,
     provider: 'local',
     ingredients: [
       { name: 'flatbread', qty: 2, unit: '', aisle: 'Bakery' },
@@ -148,6 +153,7 @@ export const MAINS: Recipe[] = [
     activeMinutes: 15,
     totalMinutes: 30,
     baseServings: 4,
+    leftoverFriendly: true,
     provider: 'local',
     ingredients: [
       { name: 'chickpeas', qty: 2, unit: 'can', aisle: 'Pantry' },
@@ -174,6 +180,7 @@ export const MAINS: Recipe[] = [
     activeMinutes: 18,
     totalMinutes: 25,
     baseServings: 4,
+    leftoverFriendly: false,
     provider: 'local',
     ingredients: [
       { name: 'shrimp', qty: 1, unit: 'lb', aisle: 'Meat & Seafood' },
@@ -200,6 +207,7 @@ export const MAINS: Recipe[] = [
     activeMinutes: 15,
     totalMinutes: 45,
     baseServings: 4,
+    leftoverFriendly: true,
     provider: 'local',
     ingredients: [
       { name: 'ground turkey', qty: 1, unit: 'lb', aisle: 'Meat & Seafood' },
@@ -230,6 +238,7 @@ export const SIDES: Recipe[] = [
     activeMinutes: 5,
     totalMinutes: 22,
     baseServings: 4,
+    leftoverFriendly: false,
     provider: 'local',
     ingredients: [
       { name: 'broccoli', qty: 1, unit: 'head', aisle: 'Produce' },
@@ -252,6 +261,7 @@ export const SIDES: Recipe[] = [
     activeMinutes: 8,
     totalMinutes: 12,
     baseServings: 4,
+    leftoverFriendly: false,
     provider: 'local',
     ingredients: [
       { name: 'green beans', qty: 1, unit: 'lb', aisle: 'Produce' },
@@ -274,6 +284,7 @@ export const SIDES: Recipe[] = [
     activeMinutes: 5,
     totalMinutes: 25,
     baseServings: 4,
+    leftoverFriendly: false,
     provider: 'local',
     ingredients: [
       { name: 'carrots', qty: 1, unit: 'lb', aisle: 'Produce' },
@@ -297,6 +308,7 @@ export const SIDES: Recipe[] = [
     activeMinutes: 8,
     totalMinutes: 8,
     baseServings: 4,
+    leftoverFriendly: false,
     provider: 'local',
     ingredients: [
       { name: 'mixed greens', qty: 5, unit: 'oz', aisle: 'Produce' },
@@ -317,6 +329,7 @@ export const SIDES: Recipe[] = [
     activeMinutes: 8,
     totalMinutes: 8,
     baseServings: 4,
+    leftoverFriendly: false,
     provider: 'local',
     ingredients: [
       { name: 'romaine', qty: 1, unit: 'head', aisle: 'Produce' },
@@ -338,6 +351,7 @@ export const SIDES: Recipe[] = [
     activeMinutes: 3,
     totalMinutes: 20,
     baseServings: 4,
+    leftoverFriendly: false,
     provider: 'local',
     ingredients: [{ name: 'jasmine rice', qty: 1.5, unit: 'cup', aisle: 'Pantry' }],
     steps: [
@@ -357,6 +371,7 @@ export const SIDES: Recipe[] = [
     activeMinutes: 12,
     totalMinutes: 30,
     baseServings: 4,
+    leftoverFriendly: false,
     provider: 'local',
     ingredients: [
       { name: 'yukon potatoes', qty: 2, unit: 'lb', aisle: 'Produce' },
@@ -380,6 +395,7 @@ export const SIDES: Recipe[] = [
     activeMinutes: 5,
     totalMinutes: 12,
     baseServings: 4,
+    leftoverFriendly: false,
     provider: 'local',
     ingredients: [
       { name: 'couscous', qty: 1, unit: 'cup', aisle: 'Pantry' },
@@ -403,6 +419,7 @@ export const SIDES: Recipe[] = [
     activeMinutes: 6,
     totalMinutes: 15,
     baseServings: 4,
+    leftoverFriendly: false,
     provider: 'local',
     ingredients: [
       { name: 'baguette', qty: 1, unit: '', aisle: 'Bakery' },
@@ -426,6 +443,7 @@ export const SIDES: Recipe[] = [
     activeMinutes: 2,
     totalMinutes: 10,
     baseServings: 4,
+    leftoverFriendly: false,
     provider: 'local',
     ingredients: [{ name: 'dinner rolls', qty: 6, unit: '', aisle: 'Bakery' }],
     steps: [{ text: 'Warm rolls in the oven.', durationMin: 10, active: false }],
@@ -443,6 +461,7 @@ export const SIDES: Recipe[] = [
     activeMinutes: 10,
     totalMinutes: 10,
     baseServings: 4,
+    leftoverFriendly: false,
     provider: 'local',
     ingredients: [
       { name: 'strawberries', qty: 1, unit: 'cup', aisle: 'Produce' },
@@ -463,6 +482,7 @@ export const SIDES: Recipe[] = [
     activeMinutes: 10,
     totalMinutes: 10,
     baseServings: 4,
+    leftoverFriendly: false,
     provider: 'local',
     ingredients: [
       { name: 'apple', qty: 2, unit: '', aisle: 'Produce' },

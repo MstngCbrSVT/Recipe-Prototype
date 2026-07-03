@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { DayPlan, Preferences } from '../types';
 import { generateMeal } from '../engine/planner';
+import { nextLeftoverTarget, sanitizeLeftovers } from '../engine/leftovers';
 import { recipeById, setExternalRecipes } from '../data/catalog';
 import { refreshFromSpoonacular } from '../providers/recipeProvider';
 import {
@@ -32,6 +33,8 @@ interface PlanContextValue {
   toggleLock: (date: string) => void;
   toggleSkip: (date: string) => void;
   swapDays: (dateA: string, dateB: string) => void;
+  makeLeftovers: (date: string) => void;
+  clearLeftovers: (date: string) => void;
   setChecked: (checked: Record<string, boolean>) => void;
   recipeStatus: RecipeStatus;
   refreshRecipes: (overrideKey?: string) => Promise<void>;
@@ -83,7 +86,9 @@ function buildWeek(prefs: Preferences, existing: DayPlan[]): DayPlan[] {
     result.push(day);
     trackVariety(day, recentProteins, recentCuisines);
   }
-  return result;
+  // A full reflow rebuilds every unlocked day from scratch, so leftover links
+  // are dropped here; sanitize is a safety net for any left dangling.
+  return sanitizeLeftovers(result, prefs);
 }
 
 function trackVariety(day: DayPlan, proteins: string[], cuisines: string[]): void {
@@ -151,28 +156,68 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
     generateWeek: () => setPlan((cur) => buildWeek(prefs, cur)),
     regenerateDay: (date) =>
       setPlan((cur) =>
-        cur.map((d) => {
-          if (d.date !== date || d.locked) return d;
-          const meal = generateMeal(prefs, [], [], d.mainId);
-          if (!meal) return d;
-          return { ...d, mainId: meal.mainId, sideIds: meal.sideIds, skipped: false };
-        }),
+        sanitizeLeftovers(
+          cur.map((d) => {
+            if (d.date !== date || d.locked || d.leftoverOf) return d;
+            const meal = generateMeal(prefs, [], [], d.mainId);
+            if (!meal) return d;
+            return { ...d, mainId: meal.mainId, sideIds: meal.sideIds, skipped: false };
+          }),
+          prefs,
+        ),
       ),
     toggleLock: (date) =>
-      setPlan((cur) => cur.map((d) => (d.date === date ? { ...d, locked: !d.locked } : d))),
+      setPlan((cur) =>
+        sanitizeLeftovers(
+          cur.map((d) => (d.date === date ? { ...d, locked: !d.locked } : d)),
+          prefs,
+        ),
+      ),
     toggleSkip: (date) =>
-      setPlan((cur) => cur.map((d) => (d.date === date ? { ...d, skipped: !d.skipped } : d))),
+      setPlan((cur) =>
+        sanitizeLeftovers(
+          cur.map((d) =>
+            d.date === date ? { ...d, skipped: !d.skipped, leftoverOf: undefined } : d,
+          ),
+          prefs,
+        ),
+      ),
     swapDays: (dateA, dateB) =>
       setPlan((cur) => {
         const a = cur.find((d) => d.date === dateA);
         const b = cur.find((d) => d.date === dateB);
         if (!a || !b) return cur;
-        return cur.map((d) => {
+        const swapped = cur.map((d) => {
           if (d.date === dateA) return { ...b, date: dateA };
           if (d.date === dateB) return { ...a, date: dateB };
           return d;
         });
+        return sanitizeLeftovers(swapped, prefs);
       }),
+    makeLeftovers: (date) =>
+      setPlan((cur) => {
+        const target = nextLeftoverTarget(cur, date);
+        if (!target) return cur;
+        const next = cur.map((d) =>
+          d.date === target.date
+            ? { ...d, leftoverOf: date, mainId: '', sideIds: [], skipped: false }
+            : d,
+        );
+        return sanitizeLeftovers(next, prefs);
+      }),
+    clearLeftovers: (date) =>
+      setPlan((cur) =>
+        sanitizeLeftovers(
+          cur.map((d) => {
+            if (d.date !== date || !d.leftoverOf) return d;
+            const meal = generateMeal(prefs, [], []);
+            return meal
+              ? { ...d, leftoverOf: undefined, mainId: meal.mainId, sideIds: meal.sideIds }
+              : { ...d, leftoverOf: undefined, skipped: true };
+          }),
+          prefs,
+        ),
+      ),
     setChecked: setCheckedState,
     recipeStatus,
     refreshRecipes: async (overrideKey?: string) => {

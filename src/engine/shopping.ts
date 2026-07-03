@@ -29,13 +29,24 @@ export function buildShoppingList(
 ): Record<Aisle, ShoppingItem[]> {
   const merged = new Map<string, ShoppingItem>();
 
+  // How many days each cooking day feeds: itself + any leftover days pointing at
+  // it. Batch-cooked meals are bought once but scaled up for the extra days.
+  const portionsByDate = new Map<string, number>();
   for (const day of days) {
-    if (day.skipped) continue;
+    if (day.leftoverOf) {
+      portionsByDate.set(day.leftoverOf, (portionsByDate.get(day.leftoverOf) ?? 1) + 1);
+    }
+  }
+
+  for (const day of days) {
+    // Leftover days do no cooking; the source day already covers them.
+    if (day.skipped || day.leftoverOf) continue;
+    const portions = portionsByDate.get(day.date) ?? 1;
     const recipeIds = [day.mainId, ...day.sideIds];
     for (const id of recipeIds) {
       const recipe = recipeById(id);
       if (!recipe) continue;
-      const scale = servings / recipe.baseServings;
+      const scale = (servings / recipe.baseServings) * portions;
       for (const ing of recipe.ingredients) {
         addIngredient(merged, ing, scale);
       }
