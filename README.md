@@ -80,10 +80,25 @@ src/
 
 ## Spoonacular (free tier) — now wired up
 
-Add your key in **Prefs → Advanced options → Spoonacular** and tap
-**Save key & load recipes**. Live recipes are normalized into the app's `Recipe`
-shape and **merged with** the built-in library (so the fresh-side guarantee and
-offline fallback still hold).
+You can either paste your key in **Prefs → Advanced options → Spoonacular**, or
+preconfigure it so the app auto-loads on first launch:
+
+```bash
+cp .env.example .env.local
+# then edit .env.local and set your key:
+# EXPO_PUBLIC_SPOONACULAR_KEY=your_key_here
+```
+
+`.env.local` is **gitignored** — your key never gets committed. (Never hardcode a
+key in source: anything committed to git is exposed in history. Because this is a
+client app, a key shipped in the bundle is also visible to anyone with the app —
+fine for a personal free-tier prototype, but a production app should proxy
+Spoonacular through a small backend that holds the key server-side.)
+
+When a key is present, the app fetches **once** on first launch and caches the
+result; tap **Save key & load recipes** in Settings to refresh manually. Live
+recipes are normalized into the app's `Recipe` shape and **merged with** the
+built-in library (so the fresh-side guarantee and offline fallback still hold).
 
 Designed around the free tier's limits (150 points/day, ~1 req/sec):
 

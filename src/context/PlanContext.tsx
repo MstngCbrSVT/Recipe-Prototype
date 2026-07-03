@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { DayPlan, Preferences } from '../types';
+import { DEFAULT_SPOONACULAR_KEY } from '../config';
 import { generateMeal } from '../engine/planner';
 import { nextLeftoverTarget, sanitizeLeftovers } from '../engine/leftovers';
 import { recipeById, setExternalRecipes } from '../data/catalog';
@@ -118,17 +119,41 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
         loadChecked(),
         loadRecipePool(),
       ]);
+      // Fall back to the key baked into .env.local (EXPO_PUBLIC_SPOONACULAR_KEY)
+      // if the user hasn't entered one in Settings, so it "just works".
+      const effectiveKey = (pr.spoonacularApiKey || DEFAULT_SPOONACULAR_KEY).trim();
+      const prefsWithKey: Preferences = effectiveKey
+        ? { ...pr, spoonacularApiKey: effectiveKey }
+        : pr;
+
       // Restore a previously fetched Spoonacular pool without a new API call.
       if (pool.length > 0) {
         setExternalRecipes(pool);
         setRecipeStatus((s) => ({ ...s, externalCount: pool.length }));
       }
-      setPrefsState(pr);
+      setPrefsState(prefsWithKey);
       setCheckedState(ch);
       // First run with no saved plan → generate one immediately (zero setup).
-      setPlan(p.length > 0 ? p : buildWeek(pr, []));
+      setPlan(p.length > 0 ? p : buildWeek(prefsWithKey, []));
       hydrated.current = true;
       setReady(true);
+
+      // Auto-load live recipes once when a key exists but nothing is cached yet.
+      // Bounded to a single fetch — later launches reuse the cached pool, so we
+      // stay well within the free tier's daily quota.
+      if (effectiveKey && pool.length === 0) {
+        setRecipeStatus((s) => ({ ...s, loading: true, message: 'Fetching recipes…' }));
+        const outcome = await refreshFromSpoonacular(effectiveKey, prefsWithKey);
+        if (outcome.ok && outcome.recipes) {
+          await saveRecipePool(outcome.recipes);
+          setPlan((cur) => buildWeek(prefsWithKey, cur));
+        }
+        setRecipeStatus({
+          loading: false,
+          message: outcome.message,
+          externalCount: outcome.count,
+        });
+      }
     })();
   }, []);
 

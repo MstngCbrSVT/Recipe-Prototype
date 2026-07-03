@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { usePlan } from '../context/PlanContext';
+import { DEFAULT_SPOONACULAR_KEY } from '../config';
 import { Allergen, DietTag, Preferences, Protein, SideType } from '../types';
 import { Button, Card, Chip } from '../ui/components';
 import { colors, spacing } from '../ui/theme';
@@ -13,7 +14,7 @@ const PROTEINS: Protein[] = ['chicken', 'beef', 'pork', 'fish', 'seafood', 'vege
 export function SettingsScreen() {
   const { prefs, setPrefs, recipeStatus, refreshRecipes } = usePlan();
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [apiKey, setApiKey] = useState(prefs.spoonacularApiKey ?? '');
+  const [apiKey, setApiKey] = useState(prefs.spoonacularApiKey ?? DEFAULT_SPOONACULAR_KEY);
 
   function update(patch: Partial<Preferences>) {
     setPrefs({ ...prefs, ...patch });
@@ -132,8 +133,9 @@ export function SettingsScreen() {
             <Text style={styles.label}>🔑 Spoonacular (free tier)</Text>
             <Text style={styles.hint}>
               Optional. Paste your key and load live recipes — they're merged with the built-in
-              library and cached, so a single fetch (2 API calls) covers all your planning. Leave
-              blank to use the built-in recipes only.
+              library and cached, so a single fetch (2 API calls) covers all your planning. You can
+              also preconfigure it in .env.local (see README) to auto-load. Leave blank to use the
+              built-in recipes only.
             </Text>
             <TextInput
               style={styles.input}
