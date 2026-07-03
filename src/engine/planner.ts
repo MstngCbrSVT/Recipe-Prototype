@@ -1,5 +1,6 @@
 import { Recipe, Preferences, SideType } from '../types';
 import { mains as catalogMains, sides as catalogSides, recipeById } from '../data/catalog';
+import { HistFilter } from './history';
 
 // Side types that satisfy the "every meal needs something fresh" rule.
 const FRESH_SIDE_TYPES: SideType[] = ['vegetable', 'fruit', 'salad'];
@@ -28,12 +29,17 @@ function cuisineMatches(recipeCuisine: string, preferred: string[]): boolean {
   });
 }
 
-function eligibleMains(prefs: Preferences): Recipe[] {
+function eligibleMains(prefs: Preferences, hist?: HistFilter): Recipe[] {
   let pool = catalogMains().filter(
     (m) =>
       passesHardFilters(m, prefs) &&
       !(m.protein && prefs.dislikedProteins.includes(m.protein)),
   );
+  // Hold back recently-cooked meals (recency cooldown) — but never empty the pool.
+  if (hist?.blocked.size) {
+    const fresh = pool.filter((m) => !hist.blocked.has(m.id));
+    if (fresh.length > 0) pool = fresh;
+  }
   // Weeknight time cap — but never let it empty the pool.
   if (prefs.maxWeeknightMinutes && prefs.maxWeeknightMinutes < 999) {
     const quick = pool.filter((m) => m.totalMinutes <= prefs.maxWeeknightMinutes);
@@ -68,8 +74,9 @@ export function generateMeal(
   recentCuisines: string[] = [],
   avoidMainId?: string,
   preferReuse = false,
+  hist?: HistFilter,
 ): GeneratedMeal | null {
-  let mains = eligibleMains(prefs);
+  let mains = eligibleMains(prefs, hist);
   if (mains.length === 0) return null;
 
   if (avoidMainId && mains.length > 1) {
@@ -95,6 +102,12 @@ export function generateMeal(
   if (prefs.cuisines?.length) {
     const liked = pool.filter((m) => cuisineMatches(m.cuisine, prefs.cuisines));
     if (liked.length > 0) pool = liked;
+  }
+
+  // Downrank meals similar to recently-disliked ones (same protein + cuisine).
+  if (hist?.dislikedPairs.size) {
+    const notSimilar = pool.filter((m) => !hist.dislikedPairs.has(`${m.protein}|${m.cuisine}`));
+    if (notSimilar.length > 0) pool = notSimilar;
   }
 
   const main = pick(pool);

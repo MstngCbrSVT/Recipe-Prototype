@@ -4,6 +4,7 @@ import { usePlan } from '../context/PlanContext';
 import { recipeById } from '../data/catalog';
 import { mealActiveMinutes, mealTotalMinutes } from '../engine/planner';
 import { canMakeLeftovers, dependentsOf } from '../engine/leftovers';
+import { todayISO } from '../engine/history';
 import { computeShared, Thread } from '../engine/sharedIngredients';
 import { DayPlan, ThreadCategory } from '../types';
 import { Button, Card } from '../ui/components';
@@ -47,10 +48,12 @@ export function PlanScreen({ onOpenDay }: { onOpenDay: (date: string) => void })
     swapDays,
     makeLeftovers,
     clearLeftovers,
+    markMade,
   } = usePlan();
   const [swapFrom, setSwapFrom] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<string | null>(null);
   const shared = useMemo(() => computeShared(plan), [plan]);
+  const today = todayISO();
 
   function handleSwapPress(date: string) {
     if (swapFrom === null) {
@@ -109,6 +112,7 @@ export function PlanScreen({ onOpenDay }: { onOpenDay: (date: string) => void })
             dependents={deps}
             dayTags={dayTags}
             dimmed={dimmed}
+            canLog={day.date <= today}
             label={dayLabel(day.date)}
             swapActive={swapFrom === day.date}
             canExtend={canMakeLeftovers(plan, day.date)}
@@ -119,6 +123,7 @@ export function PlanScreen({ onOpenDay }: { onOpenDay: (date: string) => void })
             onSwap={() => handleSwapPress(day.date)}
             onMakeLeftovers={() => makeLeftovers(day.date)}
             onCookFresh={() => clearLeftovers(day.date)}
+            onMade={() => markMade(day.date)}
           />
         );
       })}
@@ -178,6 +183,7 @@ function DayCard({
   dependents,
   dayTags,
   dimmed,
+  canLog,
   label,
   swapActive,
   canExtend,
@@ -188,12 +194,14 @@ function DayCard({
   onSwap,
   onMakeLeftovers,
   onCookFresh,
+  onMade,
 }: {
   day: DayPlan;
   source?: DayPlan;
   dependents: DayPlan[];
   dayTags: Thread[];
   dimmed: boolean;
+  canLog: boolean;
   label: string;
   swapActive: boolean;
   canExtend: boolean;
@@ -204,6 +212,7 @@ function DayCard({
   onSwap: () => void;
   onMakeLeftovers: () => void;
   onCookFresh: () => void;
+  onMade: () => void;
 }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
@@ -339,6 +348,9 @@ function DayCard({
                 variant="ghost"
                 small
               />
+            )}
+            {canLog && !day.skipped && (
+              <Button label="Made it" icon="check" onPress={onMade} variant="ghost" small />
             )}
             <Button
               label={day.skipped ? 'Add meal' : 'Skip'}

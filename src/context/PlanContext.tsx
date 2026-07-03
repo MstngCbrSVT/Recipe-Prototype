@@ -1,17 +1,20 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { DayPlan, Preferences } from '../types';
+import { DayPlan, HistoryEntry, Preferences, Rating } from '../types';
 import { DEFAULT_SPOONACULAR_KEY } from '../config';
 import { generateMeal } from '../engine/planner';
 import { nextLeftoverTarget, sanitizeLeftovers } from '../engine/leftovers';
+import { buildHistFilter, HistFilter, logMade, rollPastDays, todayISO } from '../engine/history';
 import { recipeById, setExternalRecipes } from '../data/catalog';
 import { refreshFromSpoonacular } from '../providers/recipeProvider';
 import {
   DEFAULT_PREFS,
   loadChecked,
+  loadHistory,
   loadPlan,
   loadPrefs,
   loadRecipePool,
   saveChecked,
+  saveHistory,
   savePlan,
   savePrefs,
   saveRecipePool,
@@ -37,6 +40,9 @@ interface PlanContextValue {
   makeLeftovers: (date: string) => void;
   clearLeftovers: (date: string) => void;
   setShopped: (dates: string[], value: boolean) => void;
+  history: HistoryEntry[];
+  markMade: (date: string) => void;
+  rateMeal: (date: string, rating: Rating) => void;
   setChecked: (checked: Record<string, boolean>) => void;
   recipeStatus: RecipeStatus;
   refreshRecipes: (overrideKey?: string) => Promise<void>;
@@ -57,7 +63,7 @@ function upcomingDates(count: number): string[] {
 }
 
 // Walk the days in order, tracking recent proteins/cuisines for variety.
-function buildWeek(prefs: Preferences, existing: DayPlan[]): DayPlan[] {
+function buildWeek(prefs: Preferences, existing: DayPlan[], hist?: HistFilter): DayPlan[] {
   const dates = upcomingDates(prefs.dinnersPerWeek);
   const byDate = new Map(existing.map((d) => [d.date, d]));
   const recentProteins: string[] = [];
@@ -87,7 +93,7 @@ function buildWeek(prefs: Preferences, existing: DayPlan[]): DayPlan[] {
     }
     const reuse = prefs.goal === 'save' && anchor !== null && anchorCount < anchorTarget;
     const recentArg = reuse && anchor ? [anchor] : recentProteins;
-    const meal = generateMeal(prefs, recentArg, recentCuisines, undefined, reuse);
+    const meal = generateMeal(prefs, recentArg, recentCuisines, undefined, reuse, hist);
     if (!meal) {
       // No eligible recipe (over-constrained filters) — keep a skipped slot.
       result.push({ date, mainId: '', sideIds: [], locked: false, skipped: true, shopped: false });
@@ -121,6 +127,7 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
   const [prefs, setPrefsState] = useState<Preferences>(DEFAULT_PREFS);
   const [plan, setPlan] = useState<DayPlan[]>([]);
   const [checked, setCheckedState] = useState<Record<string, boolean>>({});
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [recipeStatus, setRecipeStatus] = useState<RecipeStatus>({
     loading: false,
     message: null,
@@ -131,11 +138,12 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
   // Hydrate persisted state on first mount.
   useEffect(() => {
     (async () => {
-      const [p, pr, ch, pool] = await Promise.all([
+      const [p, pr, ch, pool, hist] = await Promise.all([
         loadPlan(),
         loadPrefs(),
         loadChecked(),
         loadRecipePool(),
+        loadHistory(),
       ]);
       // Fall back to the key baked into .env.local (EXPO_PUBLIC_SPOONACULAR_KEY)
       // if the user hasn't entered one in Settings, so it "just works".
@@ -149,10 +157,17 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
         setExternalRecipes(pool);
         setRecipeStatus((s) => ({ ...s, externalCount: pool.length }));
       }
+
+      // Move any now-past cooked days into history, keep the plan "today forward".
+      const today = todayISO();
+      const rolled = rollPastDays(p, today, hist);
+      const histNow = rolled.history;
+      setHistory(histNow);
       setPrefsState(prefsWithKey);
       setCheckedState(ch);
-      // First run with no saved plan → generate one immediately (zero setup).
-      setPlan(p.length > 0 ? p : buildWeek(prefsWithKey, []));
+      const filter = buildHistFilter(histNow, today);
+      // First run (or everything rolled off) → generate a fresh week.
+      setPlan(rolled.plan.length > 0 ? rolled.plan : buildWeek(prefsWithKey, [], filter));
       hydrated.current = true;
       setReady(true);
 
@@ -164,7 +179,7 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
         const outcome = await refreshFromSpoonacular(effectiveKey, prefsWithKey);
         if (outcome.ok && outcome.recipes) {
           await saveRecipePool(outcome.recipes);
-          setPlan((cur) => buildWeek(prefsWithKey, cur));
+          setPlan((cur) => buildWeek(prefsWithKey, cur, buildHistFilter(histNow, today)));
         }
         setRecipeStatus({
           loading: false,
@@ -185,6 +200,9 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (hydrated.current) saveChecked(checked);
   }, [checked]);
+  useEffect(() => {
+    if (hydrated.current) saveHistory(history);
+  }, [history]);
 
   const value: PlanContextValue = {
     ready,
@@ -194,22 +212,28 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
     setPrefs: (p) => {
       setPrefsState(p);
       // Reflow the week to honor new filters, keeping locked days.
-      setPlan((cur) => buildWeek(p, cur));
+      const filter = buildHistFilter(history, todayISO());
+      setPlan((cur) => buildWeek(p, cur, filter));
     },
-    generateWeek: () => setPlan((cur) => buildWeek(prefs, cur)),
-    regenerateDay: (date) =>
+    generateWeek: () => {
+      const filter = buildHistFilter(history, todayISO());
+      setPlan((cur) => buildWeek(prefs, cur, filter));
+    },
+    regenerateDay: (date) => {
+      const filter = buildHistFilter(history, todayISO());
       setPlan((cur) =>
         sanitizeLeftovers(
           cur.map((d) => {
             if (d.date !== date || d.locked || d.leftoverOf) return d;
-            const meal = generateMeal(prefs, [], [], d.mainId);
+            const meal = generateMeal(prefs, [], [], d.mainId, false, filter);
             if (!meal) return d;
             // New meal → needs shopping again.
             return { ...d, mainId: meal.mainId, sideIds: meal.sideIds, skipped: false, shopped: false };
           }),
           prefs,
         ),
-      ),
+      );
+    },
     toggleLock: (date) =>
       setPlan((cur) =>
         sanitizeLeftovers(
@@ -249,19 +273,30 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
         );
         return sanitizeLeftovers(next, prefs);
       }),
-    clearLeftovers: (date) =>
+    clearLeftovers: (date) => {
+      const filter = buildHistFilter(history, todayISO());
       setPlan((cur) =>
         sanitizeLeftovers(
           cur.map((d) => {
             if (d.date !== date || !d.leftoverOf) return d;
-            const meal = generateMeal(prefs, [], []);
+            const meal = generateMeal(prefs, [], [], undefined, false, filter);
             return meal
               ? { ...d, leftoverOf: undefined, mainId: meal.mainId, sideIds: meal.sideIds, shopped: false }
               : { ...d, leftoverOf: undefined, skipped: true };
           }),
           prefs,
         ),
+      );
+    },
+    markMade: (date) => {
+      const day = plan.find((d) => d.date === date);
+      if (day) setHistory((h) => logMade(day, h));
+    },
+    rateMeal: (date, rating) =>
+      setHistory((h) =>
+        h.map((e) => (e.date === date ? { ...e, rating: e.rating === rating ? undefined : rating } : e)),
       ),
+    history,
     setShopped: (dates, value) =>
       setPlan((cur) => cur.map((d) => (dates.includes(d.date) ? { ...d, shopped: value } : d))),
     setChecked: setCheckedState,

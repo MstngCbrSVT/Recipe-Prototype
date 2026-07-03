@@ -34,6 +34,8 @@ export type IconName =
   | 'key'
   | 'plus'
   | 'minus'
+  | 'thumbUp'
+  | 'thumbDown'
   // food categories (recipe tiles)
   | 'drumstick'
   | 'steak'
@@ -287,6 +289,20 @@ function glyph(name: IconName, s: S, color: string): React.ReactNode {
       return <Path {...s} strokeWidth={2.2} d="M12 5v14M5 12h14" />;
     case 'minus':
       return <Path {...s} strokeWidth={2.2} d="M5 12h14" />;
+    case 'thumbUp':
+      return (
+        <>
+          <Path {...s} d="M7 10.5V20H4.5a1 1 0 0 1-1-1v-7.5a1 1 0 0 1 1-1z" />
+          <Path {...s} d="M7 10.5l3.6-7.2a1.8 1.8 0 0 1 3.3 1.4L13 9h5.2a2 2 0 0 1 2 2.4l-1.1 6A2 2 0 0 1 17 19H7" />
+        </>
+      );
+    case 'thumbDown':
+      return (
+        <>
+          <Path {...s} d="M17 13.5V4h2.5a1 1 0 0 1 1 1v7.5a1 1 0 0 1-1 1z" />
+          <Path {...s} d="M17 13.5l-3.6 7.2a1.8 1.8 0 0 1-3.3-1.4L11 15H5.8a2 2 0 0 1-2-2.4l1.1-6A2 2 0 0 1 7 5h10" />
+        </>
+      );
     case 'drumstick':
       // Filled silhouette: a meaty bulb narrowing to a forked bone (two knobs).
       return (

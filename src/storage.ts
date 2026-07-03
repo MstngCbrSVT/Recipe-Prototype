@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DayPlan, Preferences, Recipe } from './types';
+import { DayPlan, HistoryEntry, Preferences, Recipe } from './types';
 
 // Local persistence so a locked week "sticks" when the user returns — no account
 // required at entry (accounts / cloud sync are a later, opt-in feature).
@@ -10,6 +10,7 @@ const KEYS = {
   checked: 'mealapp.shopping.checked.v1',
   pool: 'mealapp.recipepool.v1',
   theme: 'mealapp.thememode.v1',
+  history: 'mealapp.history.v1',
 };
 
 export const DEFAULT_PREFS: Preferences = {
@@ -68,3 +69,7 @@ export const saveRecipePool = (pool: Recipe[]) => save(KEYS.pool, pool);
 export type ThemeMode = 'auto' | 'light' | 'dark';
 export const loadThemeMode = () => load<ThemeMode>(KEYS.theme, 'auto');
 export const saveThemeMode = (mode: ThemeMode) => save(KEYS.theme, mode);
+
+// Cook history (meals made + ratings), persisted across weeks.
+export const loadHistory = () => load<HistoryEntry[]>(KEYS.history, []);
+export const saveHistory = (h: HistoryEntry[]) => save(KEYS.history, h);

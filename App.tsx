@@ -6,16 +6,18 @@ import { ShoppingScreen } from './src/screens/ShoppingScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { RecipeDetailScreen } from './src/screens/RecipeDetailScreen';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
+import { HistoryScreen } from './src/screens/HistoryScreen';
 import { Loader } from './src/ui/components';
 import { Icon, IconName } from './src/ui/Icon';
 import { Palette, spacing } from './src/ui/theme';
 import { ThemeProvider, useTheme } from './src/ui/ThemeContext';
 
-type Tab = 'plan' | 'shopping' | 'settings';
+type Tab = 'plan' | 'shopping' | 'history' | 'settings';
 
 const TABS: { key: Tab; label: string; icon: IconName }[] = [
   { key: 'plan', label: 'Plan', icon: 'calendar' },
   { key: 'shopping', label: 'Shop', icon: 'cart' },
+  { key: 'history', label: 'History', icon: 'clock' },
   { key: 'settings', label: 'Prefs', icon: 'sliders' },
 ];
 
@@ -49,6 +51,7 @@ function Shell() {
       <View style={{ flex: 1 }}>
         {tab === 'plan' && <PlanScreen onOpenDay={setOpenDate} />}
         {tab === 'shopping' && <ShoppingScreen />}
+        {tab === 'history' && <HistoryScreen />}
         {tab === 'settings' && <SettingsScreen />}
       </View>
 

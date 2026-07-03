@@ -142,6 +142,17 @@ export function servingsFor(adults: number, kids: number): number {
   return Math.max(1, adults + Math.round(kids * 0.6));
 }
 
+// A meal you've actually cooked, with optional feedback. Drives recency-aware
+// planning: recently-cooked meals are held back, and the rating tunes how long.
+export type Rating = 'up' | 'down';
+export interface HistoryEntry {
+  date: string; // ISO date it was cooked
+  mainId: string;
+  sideIds: string[];
+  title: string; // denormalized so history survives recipe-source changes
+  rating?: Rating;
+}
+
 // A merged, coordinated cooking timeline so every dish finishes together.
 export interface TimelineEntry {
   atMin: number; // minutes from "start cooking now"
