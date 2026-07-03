@@ -23,7 +23,7 @@
       "output": "single"
     },
     "experiments": {
-      "baseUrl": "/recipe-prototype"
+      "baseUrl": "/Recipe-Prototype"
     }
   }
 }
