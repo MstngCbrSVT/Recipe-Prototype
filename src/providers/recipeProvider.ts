@@ -15,7 +15,7 @@ export interface RefreshOutcome {
 }
 
 export async function refreshFromSpoonacular(
-  apiKey: string,
+  apiKey: 860011437c214d419fa2641158a8066f,
   prefs: Preferences,
 ): Promise<RefreshOutcome> {
   try {
