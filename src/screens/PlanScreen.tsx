@@ -4,11 +4,20 @@ import { usePlan } from '../context/PlanContext';
 import { recipeById } from '../data/catalog';
 import { mealActiveMinutes, mealTotalMinutes } from '../engine/planner';
 import { canMakeLeftovers, dependentsOf } from '../engine/leftovers';
-import { DayPlan } from '../types';
+import { computeShared, Thread } from '../engine/sharedIngredients';
+import { DayPlan, ThreadCategory } from '../types';
 import { Button, Card } from '../ui/components';
-import { Icon, recipeIconName } from '../ui/Icon';
+import { Icon, IconName, recipeIconName } from '../ui/Icon';
 import { Palette, radius, spacing } from '../ui/theme';
 import { useTheme } from '../ui/ThemeContext';
+
+const CAT_ICON: Record<ThreadCategory, IconName> = {
+  protein: 'drumstick',
+  seafood: 'fish',
+  herb: 'leaf',
+  dairy: 'cheese',
+  specialty: 'pot',
+};
 
 function dayLabel(iso: string): string {
   const d = new Date(iso + 'T00:00:00');
@@ -40,6 +49,8 @@ export function PlanScreen({ onOpenDay }: { onOpenDay: (date: string) => void })
     clearLeftovers,
   } = usePlan();
   const [swapFrom, setSwapFrom] = useState<string | null>(null);
+  const [highlight, setHighlight] = useState<string | null>(null);
+  const shared = useMemo(() => computeShared(plan), [plan]);
 
   function handleSwapPress(date: string) {
     if (swapFrom === null) {
@@ -66,6 +77,16 @@ export function PlanScreen({ onOpenDay }: { onOpenDay: (date: string) => void })
         <Button label="Regenerate whole week" icon="dice" onPress={generateWeek} variant="secondary" />
       </View>
 
+      {shared.threads.length > 0 && (
+        <SharedStrip
+          shared={shared}
+          highlight={highlight}
+          onToggle={(k) => setHighlight((cur) => (cur === k ? null : k))}
+          styles={styles}
+          colors={colors}
+        />
+      )}
+
       {swapFrom && (
         <View style={styles.swapBanner}>
           <Text style={styles.swapText}>Swapping — pick another day to trade with</Text>
@@ -78,12 +99,16 @@ export function PlanScreen({ onOpenDay }: { onOpenDay: (date: string) => void })
       {plan.map((day) => {
         const source = day.leftoverOf ? plan.find((d) => d.date === day.leftoverOf) : undefined;
         const deps = dependentsOf(plan, day.date);
+        const dayTags = shared.dayThreads[day.date] ?? [];
+        const dimmed = highlight !== null && !dayTags.some((t) => t.key === highlight);
         return (
           <DayCard
             key={day.date}
             day={day}
             source={source}
             dependents={deps}
+            dayTags={dayTags}
+            dimmed={dimmed}
             label={dayLabel(day.date)}
             swapActive={swapFrom === day.date}
             canExtend={canMakeLeftovers(plan, day.date)}
@@ -101,10 +126,58 @@ export function PlanScreen({ onOpenDay }: { onOpenDay: (date: string) => void })
   );
 }
 
+function SharedStrip({
+  shared,
+  highlight,
+  onToggle,
+  styles,
+  colors,
+}: {
+  shared: ReturnType<typeof computeShared>;
+  highlight: string | null;
+  onToggle: (key: string) => void;
+  styles: Styles;
+  colors: Palette;
+}) {
+  return (
+    <Card style={styles.strip}>
+      <View style={styles.stripHead}>
+        <Icon name="refresh" size={16} color={colors.primary} strokeWidth={2} />
+        <Text style={styles.stripTitle}>Shared across your week</Text>
+      </View>
+      <View style={styles.stripChips}>
+        {shared.threads.map((t) => {
+          const c = colors.thread[t.category];
+          const on = highlight === t.key;
+          return (
+            <Pressable
+              key={t.key}
+              onPress={() => onToggle(t.key)}
+              style={[styles.threadChip, { backgroundColor: c.bg, borderColor: on ? c.fg : 'transparent' }]}
+            >
+              <Icon name={CAT_ICON[t.category]} size={13} color={c.fg} strokeWidth={2} />
+              <Text style={[styles.threadChipText, { color: c.fg }]}>
+                {t.label} · {t.count} nights
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      <View style={styles.savingsRow}>
+        <Text style={styles.savingsAmt}>≈ ${shared.savings}</Text>
+        <Text style={styles.savingsLbl}>saved · buy once, use it up</Text>
+      </View>
+      <Text style={styles.stripHint}>Tap an ingredient to see which nights use it.</Text>
+    </Card>
+  );
+}
+
 function DayCard({
   day,
   source,
   dependents,
+  dayTags,
+  dimmed,
   label,
   swapActive,
   canExtend,
@@ -119,6 +192,8 @@ function DayCard({
   day: DayPlan;
   source?: DayPlan;
   dependents: DayPlan[];
+  dayTags: Thread[];
+  dimmed: boolean;
   label: string;
   swapActive: boolean;
   canExtend: boolean;
@@ -149,7 +224,7 @@ function DayCard({
               ? colors.accent
               : colors.border,
         borderWidth: swapActive || day.locked || isLeftover ? 2 : 1,
-        opacity: day.skipped ? 0.55 : 1,
+        opacity: day.skipped ? 0.55 : dimmed ? 0.4 : 1,
       }}
     >
       <View style={styles.cardHeader}>
@@ -207,6 +282,19 @@ function DayCard({
                 <Text style={styles.metaPill}>{total} min total</Text>
                 <Text style={styles.metaPillGhost}>{active} min hands-on</Text>
               </View>
+              {dayTags.length > 0 && (
+                <View style={styles.tagRow}>
+                  {dayTags.map((t) => {
+                    const c = colors.thread[t.category];
+                    return (
+                      <View key={t.key} style={[styles.dayTag, { backgroundColor: c.bg }]}>
+                        <View style={[styles.tagDot, { backgroundColor: c.fg }]} />
+                        <Text style={[styles.dayTagText, { color: c.fg }]}>{t.label}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
             </View>
           </View>
         </Pressable>
@@ -326,4 +414,46 @@ const makeStyles = (colors: Palette) =>
     },
     swapText: { color: colors.primaryDark, fontWeight: '600', fontSize: 13 },
     swapCancel: { color: colors.primary, fontWeight: '700', fontSize: 13 },
+    // shared-ingredient strip
+    strip: { marginBottom: spacing(4), paddingBottom: spacing(3) },
+    stripHead: { flexDirection: 'row', alignItems: 'center', gap: spacing(2), marginBottom: spacing(3) },
+    stripTitle: { fontSize: 15, fontWeight: '800', color: colors.text },
+    stripChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing(2) },
+    threadChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingVertical: 6,
+      paddingHorizontal: spacing(3),
+      borderRadius: 999,
+      borderWidth: 1.5,
+    },
+    threadChipText: { fontSize: 12.5, fontWeight: '700' },
+    savingsRow: {
+      flexDirection: 'row',
+      alignItems: 'baseline',
+      flexWrap: 'wrap',
+      gap: spacing(2),
+      marginTop: spacing(3),
+      paddingTop: spacing(3),
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    savingsAmt: { color: colors.money, fontWeight: '900', fontSize: 18 },
+    savingsLbl: { color: colors.textMuted, fontSize: 12.5, fontWeight: '600' },
+    stripHint: { color: colors.textMuted, fontSize: 11.5, marginTop: spacing(2), fontStyle: 'italic' },
+    // per-day reuse tags
+    tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: spacing(2) },
+    dayTag: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      paddingVertical: 3,
+      paddingHorizontal: spacing(2),
+      borderRadius: 999,
+    },
+    tagDot: { width: 7, height: 7, borderRadius: 4 },
+    dayTagText: { fontSize: 11.5, fontWeight: '700' },
   });
+
+type Styles = ReturnType<typeof makeStyles>;

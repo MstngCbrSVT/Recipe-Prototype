@@ -99,6 +99,10 @@ export interface DayPlan {
   leftoverOf?: string; // ISO date of the day the food was actually cooked
 }
 
+// Categories of expensive + perishable ingredients worth highlighting when
+// they're reused across the week (the money-saving "threads").
+export type ThreadCategory = 'protein' | 'seafood' | 'herb' | 'dairy' | 'specialty';
+
 export type Goal = 'save' | 'time' | 'healthy' | 'variety';
 export type Cuisine =
   | 'Italian'

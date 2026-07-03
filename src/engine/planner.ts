@@ -67,6 +67,7 @@ export function generateMeal(
   recentProteins: string[] = [],
   recentCuisines: string[] = [],
   avoidMainId?: string,
+  preferReuse = false,
 ): GeneratedMeal | null {
   let mains = eligibleMains(prefs);
   if (mains.length === 0) return null;
@@ -75,15 +76,20 @@ export function generateMeal(
     mains = mains.filter((m) => m.id !== avoidMainId);
   }
 
-  // Prefer mains whose protein AND cuisine are both fresh to the week.
-  let pool = mains.filter(
-    (m) =>
-      !recentProteins.includes(m.protein ?? '') &&
-      !recentCuisines.includes(m.cuisine),
-  );
-  // Relax progressively so we always return a meal.
-  if (pool.length === 0) pool = mains.filter((m) => !recentProteins.includes(m.protein ?? ''));
-  if (pool.length === 0) pool = mains;
+  let pool: Recipe[];
+  if (preferReuse && recentProteins.length > 0) {
+    // Money-saving: build the week around a shared "anchor" protein so an
+    // expensive, perishable ingredient gets bought once and used up.
+    pool = mains.filter((m) => recentProteins.includes(m.protein ?? ''));
+    if (pool.length === 0) pool = mains;
+  } else {
+    // Variety: avoid repeating the last couple of nights' protein and cuisine.
+    const recentP = recentProteins.slice(-2);
+    const recentC = recentCuisines.slice(-2);
+    pool = mains.filter((m) => !recentP.includes(m.protein ?? '') && !recentC.includes(m.cuisine));
+    if (pool.length === 0) pool = mains.filter((m) => !recentP.includes(m.protein ?? ''));
+    if (pool.length === 0) pool = mains;
+  }
 
   // Soft preference toward liked cuisines (only if it doesn't empty the pool).
   if (prefs.cuisines?.length) {

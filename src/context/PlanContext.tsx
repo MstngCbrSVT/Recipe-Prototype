@@ -62,6 +62,18 @@ function buildWeek(prefs: Preferences, existing: DayPlan[]): DayPlan[] {
   const recentProteins: string[] = [];
   const recentCuisines: string[] = [];
   const result: DayPlan[] = [];
+  // Save-money: anchor ~60% of the week on one protein, then let the rest vary —
+  // enough overlap to save real money without eating chicken seven nights running.
+  let anchor: string | null = null;
+  let anchorCount = 0;
+  const anchorTarget = Math.ceil(prefs.dinnersPerWeek * 0.6);
+
+  const noteProtein = (mainId: string) => {
+    const p = recipeById(mainId)?.protein;
+    if (!p) return;
+    if (anchor === null) anchor = p;
+    if (p === anchor) anchorCount++;
+  };
 
   for (const date of dates) {
     const prior = byDate.get(date);
@@ -69,9 +81,12 @@ function buildWeek(prefs: Preferences, existing: DayPlan[]): DayPlan[] {
     if (prior && prior.locked) {
       result.push(prior);
       trackVariety(prior, recentProteins, recentCuisines);
+      noteProtein(prior.mainId);
       continue;
     }
-    const meal = generateMeal(prefs, recentProteins.slice(-2), recentCuisines.slice(-2));
+    const reuse = prefs.goal === 'save' && anchor !== null && anchorCount < anchorTarget;
+    const recentArg = reuse && anchor ? [anchor] : recentProteins;
+    const meal = generateMeal(prefs, recentArg, recentCuisines, undefined, reuse);
     if (!meal) {
       // No eligible recipe (over-constrained filters) — keep a skipped slot.
       result.push({ date, mainId: '', sideIds: [], locked: false, skipped: true });
@@ -86,6 +101,7 @@ function buildWeek(prefs: Preferences, existing: DayPlan[]): DayPlan[] {
     };
     result.push(day);
     trackVariety(day, recentProteins, recentCuisines);
+    noteProtein(day.mainId);
   }
   // A full reflow rebuilds every unlocked day from scratch, so leftover links
   // are dropped here; sanitize is a safety net for any left dangling.
