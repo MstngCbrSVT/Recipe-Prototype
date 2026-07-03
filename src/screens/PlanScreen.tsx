@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { usePlan } from '../context/PlanContext';
 import { recipeById } from '../data/catalog';
@@ -6,7 +6,8 @@ import { mealActiveMinutes, mealTotalMinutes } from '../engine/planner';
 import { canMakeLeftovers, dependentsOf } from '../engine/leftovers';
 import { DayPlan } from '../types';
 import { Button, Card } from '../ui/components';
-import { colors, radius, spacing } from '../ui/theme';
+import { Palette, radius, spacing } from '../ui/theme';
+import { useTheme } from '../ui/ThemeContext';
 
 function dayLabel(iso: string): string {
   const d = new Date(iso + 'T00:00:00');
@@ -25,6 +26,8 @@ function shortDay(iso: string): string {
 }
 
 export function PlanScreen({ onOpenDay }: { onOpenDay: (date: string) => void }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const {
     plan,
     generateWeek,
@@ -126,8 +129,9 @@ function DayCard({
   onMakeLeftovers: () => void;
   onCookFresh: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const isLeftover = !!day.leftoverOf;
-  // A leftover day renders the meal from its source day.
   const main = isLeftover ? recipeById(source?.mainId ?? '') : recipeById(day.mainId);
   const total = mealTotalMinutes(day.mainId, day.sideIds);
   const active = mealActiveMinutes(day.mainId, day.sideIds);
@@ -237,59 +241,60 @@ function DayCard({
   );
 }
 
-const styles = StyleSheet.create({
-  h1: { fontSize: 26, fontWeight: '800', color: colors.text },
-  sub: { fontSize: 14, color: colors.textMuted, marginTop: spacing(1), lineHeight: 20 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' },
-  dayLabel: { fontSize: 15, fontWeight: '700', color: colors.primaryDark },
-  lockBadge: { fontSize: 12, fontWeight: '700', color: colors.primaryDark },
-  leftoverBadge: { fontSize: 12, fontWeight: '700', color: colors.accent },
-  batchBadge: { fontSize: 11, fontWeight: '700', color: colors.accent, width: '100%', marginTop: 2 },
-  mainRow: { flexDirection: 'row', marginTop: spacing(2), alignItems: 'flex-start' },
-  mainEmoji: { fontSize: 40, marginRight: spacing(3) },
-  mainTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
-  sides: { fontSize: 14, color: colors.textMuted, marginTop: spacing(1) },
-  metaRow: { flexDirection: 'row', marginTop: spacing(2), flexWrap: 'wrap' },
-  metaPill: {
-    backgroundColor: colors.primary,
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '700',
-    paddingVertical: 3,
-    paddingHorizontal: spacing(2),
-    borderRadius: radius.sm,
-    overflow: 'hidden',
-    marginRight: spacing(2),
-  },
-  metaPillGhost: {
-    backgroundColor: colors.chipBg,
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: '700',
-    paddingVertical: 3,
-    paddingHorizontal: spacing(2),
-    borderRadius: radius.sm,
-    overflow: 'hidden',
-  },
-  actions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing(2),
-    marginTop: spacing(3),
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    paddingTop: spacing(3),
-  },
-  skippedText: { fontSize: 15, color: colors.textMuted, fontStyle: 'italic' },
-  swapBanner: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#FDECE6',
-    borderRadius: radius.sm,
-    padding: spacing(3),
-    marginBottom: spacing(3),
-  },
-  swapText: { color: colors.primaryDark, fontWeight: '600', fontSize: 13 },
-  swapCancel: { color: colors.primary, fontWeight: '700', fontSize: 13 },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    h1: { fontSize: 26, fontWeight: '800', color: colors.text },
+    sub: { fontSize: 14, color: colors.textMuted, marginTop: spacing(1), lineHeight: 20 },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' },
+    dayLabel: { fontSize: 15, fontWeight: '700', color: colors.primaryDark },
+    lockBadge: { fontSize: 12, fontWeight: '700', color: colors.primaryDark },
+    leftoverBadge: { fontSize: 12, fontWeight: '700', color: colors.accent },
+    batchBadge: { fontSize: 11, fontWeight: '700', color: colors.accent, width: '100%', marginTop: 2 },
+    mainRow: { flexDirection: 'row', marginTop: spacing(2), alignItems: 'flex-start' },
+    mainEmoji: { fontSize: 40, marginRight: spacing(3) },
+    mainTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
+    sides: { fontSize: 14, color: colors.textMuted, marginTop: spacing(1) },
+    metaRow: { flexDirection: 'row', marginTop: spacing(2), flexWrap: 'wrap' },
+    metaPill: {
+      backgroundColor: colors.primary,
+      color: colors.onPrimary,
+      fontSize: 12,
+      fontWeight: '700',
+      paddingVertical: 3,
+      paddingHorizontal: spacing(2),
+      borderRadius: radius.sm,
+      overflow: 'hidden',
+      marginRight: spacing(2),
+    },
+    metaPillGhost: {
+      backgroundColor: colors.chipBg,
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: '700',
+      paddingVertical: 3,
+      paddingHorizontal: spacing(2),
+      borderRadius: radius.sm,
+      overflow: 'hidden',
+    },
+    actions: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing(2),
+      marginTop: spacing(3),
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: spacing(3),
+    },
+    skippedText: { fontSize: 15, color: colors.textMuted, fontStyle: 'italic' },
+    swapBanner: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: colors.chipBg,
+      borderRadius: radius.sm,
+      padding: spacing(3),
+      marginBottom: spacing(3),
+    },
+    swapText: { color: colors.primaryDark, fontWeight: '600', fontSize: 13 },
+    swapCancel: { color: colors.primary, fontWeight: '700', fontSize: 13 },
+  });

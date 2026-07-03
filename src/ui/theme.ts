@@ -1,15 +1,64 @@
-export const colors = {
-  bg: '#FBF7F0',
+// Two palettes — "Garden" (light) and "Midnight" (dark) — exposed through a
+// shared Palette shape so components can be styled once and themed at runtime.
+// Colors are consumed via useTheme() (see ThemeContext), never imported directly,
+// so switching light/dark re-themes every screen.
+
+export interface Palette {
+  bg: string;
+  card: string;
+  text: string;
+  textMuted: string;
+  border: string;
+  primary: string;
+  primaryDark: string;
+  onPrimary: string; // text/icon on a primary-colored surface
+  accent: string;
+  onAccent: string; // text/icon on an accent-colored surface
+  locked: string;
+  danger: string;
+  chipBg: string;
+  money: string; // savings figures (gold reads as "money")
+  moneyBg: string;
+}
+
+// Garden — fresh, produce-forward. Green leads; a bronze accent keeps secondary
+// actions distinct from the brand green.
+export const light: Palette = {
+  bg: '#F4F6F1',
   card: '#FFFFFF',
-  primary: '#E8623D', // warm terracotta
-  primaryDark: '#C24A29',
-  accent: '#2F8F6B', // fresh green
-  text: '#2A2724',
-  textMuted: '#8A8178',
-  border: '#EDE5D8',
-  locked: '#F4C542',
-  danger: '#C0392B',
-  chipBg: '#F1EADF',
+  text: '#1F2A23',
+  textMuted: '#6E7A70',
+  border: '#E3E9DE',
+  primary: '#2E7D5B',
+  primaryDark: '#226145',
+  onPrimary: '#FFFFFF',
+  accent: '#A8741F',
+  onAccent: '#FFFFFF',
+  locked: '#C9962F',
+  danger: '#BC4030',
+  chipBg: '#E9F0E5',
+  money: '#A8741F',
+  moneyBg: '#F3EAD6',
+};
+
+// Midnight — cool teal on deep slate. Food and color pop off the dark ground;
+// primary buttons use dark ink for contrast on the teal.
+export const dark: Palette = {
+  bg: '#121822',
+  card: '#1B2430',
+  text: '#E9EFF6',
+  textMuted: '#93A1B3',
+  border: '#2A3542',
+  primary: '#3EA891',
+  primaryDark: '#348D79',
+  onPrimary: '#04231C',
+  accent: '#E0A24A',
+  onAccent: '#241606',
+  locked: '#E0A24A',
+  danger: '#E06A57',
+  chipBg: '#24303D',
+  money: '#E8C25C',
+  moneyBg: 'rgba(232,194,92,0.15)',
 };
 
 export const spacing = (n: number) => n * 4;

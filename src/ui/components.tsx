@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -7,9 +7,12 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
-import { colors, radius, spacing } from './theme';
+import { Palette, radius, spacing } from './theme';
+import { useTheme } from './ThemeContext';
 
 export function Card({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
@@ -24,6 +27,8 @@ export function Button({
   variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   small?: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const bg =
     variant === 'primary'
       ? colors.primary
@@ -32,7 +37,14 @@ export function Button({
         : variant === 'secondary'
           ? colors.accent
           : 'transparent';
-  const fg = variant === 'ghost' ? colors.primary : '#fff';
+  const fg =
+    variant === 'ghost'
+      ? colors.primary
+      : variant === 'primary'
+        ? colors.onPrimary
+        : variant === 'secondary'
+          ? colors.onAccent
+          : '#fff';
   return (
     <Pressable
       onPress={onPress}
@@ -57,52 +69,59 @@ export function Chip({
   active?: boolean;
   onPress?: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <Pressable
       onPress={onPress}
       style={[styles.chip, active && { backgroundColor: colors.primary, borderColor: colors.primary }]}
     >
-      <Text style={[styles.chipText, active && { color: '#fff' }]}>{label}</Text>
+      <Text style={[styles.chipText, active && { color: colors.onPrimary }]}>{label}</Text>
     </Pressable>
   );
 }
 
 export function Loader() {
+  const { colors } = useTheme();
   return (
-    <View style={styles.loader}>
+    <View style={[styles0.loader, { backgroundColor: colors.bg }]}>
       <ActivityIndicator color={colors.primary} size="large" />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: radius.md,
-    padding: spacing(4),
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  button: {
-    paddingVertical: spacing(3),
-    paddingHorizontal: spacing(4),
-    borderRadius: radius.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  buttonSmall: { paddingVertical: spacing(2), paddingHorizontal: spacing(3) },
-  buttonGhost: { borderWidth: 1, borderColor: colors.primary },
-  buttonText: { fontWeight: '700', fontSize: 15 },
-  chip: {
-    paddingVertical: spacing(2),
-    paddingHorizontal: spacing(3),
-    borderRadius: 999,
-    backgroundColor: colors.chipBg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginRight: spacing(2),
-    marginBottom: spacing(2),
-  },
-  chipText: { color: colors.text, fontSize: 13, fontWeight: '600' },
+const styles0 = StyleSheet.create({
   loader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });
+
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: radius.md,
+      padding: spacing(4),
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    button: {
+      paddingVertical: spacing(3),
+      paddingHorizontal: spacing(4),
+      borderRadius: radius.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    buttonSmall: { paddingVertical: spacing(2), paddingHorizontal: spacing(3) },
+    buttonGhost: { borderWidth: 1, borderColor: colors.primary },
+    buttonText: { fontWeight: '700', fontSize: 15 },
+    chip: {
+      paddingVertical: spacing(2),
+      paddingHorizontal: spacing(3),
+      borderRadius: 999,
+      backgroundColor: colors.chipBg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginRight: spacing(2),
+      marginBottom: spacing(2),
+    },
+    chipText: { color: colors.text, fontSize: 13, fontWeight: '600' },
+  });

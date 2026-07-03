@@ -9,6 +9,7 @@ const KEYS = {
   prefs: 'mealapp.prefs.v1',
   checked: 'mealapp.shopping.checked.v1',
   pool: 'mealapp.recipepool.v1',
+  theme: 'mealapp.thememode.v1',
 };
 
 export const DEFAULT_PREFS: Preferences = {
@@ -51,3 +52,8 @@ export const saveChecked = (checked: Record<string, boolean>) => save(KEYS.check
 // spending more of the daily free-tier quota.
 export const loadRecipePool = () => load<Recipe[]>(KEYS.pool, []);
 export const saveRecipePool = (pool: Recipe[]) => save(KEYS.pool, pool);
+
+// Theme preference: 'auto' follows the phone's light/dark setting.
+export type ThemeMode = 'auto' | 'light' | 'dark';
+export const loadThemeMode = () => load<ThemeMode>(KEYS.theme, 'auto');
+export const saveThemeMode = (mode: ThemeMode) => save(KEYS.theme, mode);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { usePlan } from '../context/PlanContext';
 import { Recipe } from '../types';
@@ -7,9 +7,12 @@ import { findVideos } from '../data/influencers';
 import { buildTimeline } from '../engine/timeline';
 import { mealActiveMinutes } from '../engine/planner';
 import { Button, Card } from '../ui/components';
-import { colors, radius, spacing } from '../ui/theme';
+import { Palette, radius, spacing } from '../ui/theme';
+import { useTheme } from '../ui/ThemeContext';
 
 export function RecipeDetailScreen({ date, onClose }: { date: string; onClose: () => void }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { plan, prefs } = usePlan();
   const day = plan.find((d) => d.date === date);
 
@@ -52,7 +55,7 @@ export function RecipeDetailScreen({ date, onClose }: { date: string; onClose: (
               <View style={styles.timeCol}>
                 <Text style={styles.timeText}>{e.atMin === 0 ? 'Now' : `+${e.atMin}m`}</Text>
               </View>
-              <View style={dotStyle(e.active)} />
+              <View style={dotStyle(e.active, colors)} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.stepText}>{e.text}</Text>
                 <Text style={styles.stepRecipe}>
@@ -66,7 +69,7 @@ export function RecipeDetailScreen({ date, onClose }: { date: string; onClose: (
             <View style={styles.timeCol}>
               <Text style={[styles.timeText, { color: colors.accent }]}>+{totalMinutes}m</Text>
             </View>
-            <View style={dotStyle(true)} />
+            <View style={dotStyle(true, colors)} />
             <Text style={[styles.stepText, { fontWeight: '800', color: colors.accent }]}>
               🍽️ Serve — everything's ready
             </Text>
@@ -142,6 +145,8 @@ export function RecipeDetailScreen({ date, onClose }: { date: string; onClose: (
 }
 
 function Header({ onClose }: { onClose: () => void }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.header}>
       <Button label="✕ Close" onPress={onClose} variant="ghost" small />
@@ -154,7 +159,7 @@ function formatQty(n: number): string {
   return n.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
 }
 
-function dotStyle(active: boolean) {
+function dotStyle(active: boolean, colors: Palette) {
   return {
     width: 10,
     height: 10,
@@ -165,44 +170,45 @@ function dotStyle(active: boolean) {
   };
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
-  header: {
-    paddingTop: spacing(12),
-    paddingHorizontal: spacing(4),
-    paddingBottom: spacing(2),
-    flexDirection: 'row',
-  },
-  summaryTitle: { color: '#fff', fontSize: 14, fontWeight: '600', opacity: 0.9 },
-  summaryTime: { color: '#fff', fontSize: 44, fontWeight: '900', marginTop: spacing(1) },
-  summarySub: { color: '#fff', fontSize: 13, opacity: 0.9 },
-  sectionTitle: { fontSize: 20, fontWeight: '800', color: colors.text },
-  sectionSub: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
-  timelineRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing(3) },
-  timeCol: { width: 48 },
-  timeText: { fontSize: 13, fontWeight: '800', color: colors.primary },
-  stepText: { fontSize: 15, color: colors.text, fontWeight: '500' },
-  stepRecipe: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-  recipeHeader: { flexDirection: 'row', alignItems: 'center' },
-  recipeTitle: { fontSize: 17, fontWeight: '700', color: colors.text },
-  recipeMeta: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
-  subHead: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: colors.primaryDark,
-    marginTop: spacing(3),
-    marginBottom: spacing(1),
-  },
-  ingredient: { fontSize: 14, color: colors.text, lineHeight: 22 },
-  stepDur: { color: colors.textMuted, fontSize: 12 },
-  creatorPill: {
-    backgroundColor: '#FDECE6',
-    borderRadius: radius.sm,
-    padding: spacing(2),
-    marginTop: spacing(2),
-  },
-  creatorText: { color: colors.primaryDark, fontWeight: '700', fontSize: 13 },
-  videoCreator: { fontSize: 15, fontWeight: '700', color: colors.text },
-  videoQuery: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
-  videoGo: { fontSize: 13, fontWeight: '700', color: colors.primary },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.bg },
+    header: {
+      paddingTop: spacing(12),
+      paddingHorizontal: spacing(4),
+      paddingBottom: spacing(2),
+      flexDirection: 'row',
+    },
+    summaryTitle: { color: colors.onPrimary, fontSize: 14, fontWeight: '600', opacity: 0.9 },
+    summaryTime: { color: colors.onPrimary, fontSize: 44, fontWeight: '900', marginTop: spacing(1) },
+    summarySub: { color: colors.onPrimary, fontSize: 13, opacity: 0.9 },
+    sectionTitle: { fontSize: 20, fontWeight: '800', color: colors.text },
+    sectionSub: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+    timelineRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing(3) },
+    timeCol: { width: 48 },
+    timeText: { fontSize: 13, fontWeight: '800', color: colors.primary },
+    stepText: { fontSize: 15, color: colors.text, fontWeight: '500' },
+    stepRecipe: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+    recipeHeader: { flexDirection: 'row', alignItems: 'center' },
+    recipeTitle: { fontSize: 17, fontWeight: '700', color: colors.text },
+    recipeMeta: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+    subHead: {
+      fontSize: 14,
+      fontWeight: '800',
+      color: colors.primaryDark,
+      marginTop: spacing(3),
+      marginBottom: spacing(1),
+    },
+    ingredient: { fontSize: 14, color: colors.text, lineHeight: 22 },
+    stepDur: { color: colors.textMuted, fontSize: 12 },
+    creatorPill: {
+      backgroundColor: colors.chipBg,
+      borderRadius: radius.sm,
+      padding: spacing(2),
+      marginTop: spacing(2),
+    },
+    creatorText: { color: colors.primaryDark, fontWeight: '700', fontSize: 13 },
+    videoCreator: { fontSize: 15, fontWeight: '700', color: colors.text },
+    videoQuery: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+    videoGo: { fontSize: 13, fontWeight: '700', color: colors.primary },
+  });

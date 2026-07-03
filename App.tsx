@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Modal, Pressable, SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { PlanProvider, usePlan } from './src/context/PlanContext';
 import { PlanScreen } from './src/screens/PlanScreen';
@@ -6,7 +6,8 @@ import { ShoppingScreen } from './src/screens/ShoppingScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { RecipeDetailScreen } from './src/screens/RecipeDetailScreen';
 import { Loader } from './src/ui/components';
-import { colors, spacing } from './src/ui/theme';
+import { Palette, spacing } from './src/ui/theme';
+import { ThemeProvider, useTheme } from './src/ui/ThemeContext';
 
 type Tab = 'plan' | 'shopping' | 'settings';
 
@@ -17,6 +18,8 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
 ];
 
 function Shell() {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { ready } = usePlan();
   const [tab, setTab] = useState<Tab>('plan');
   const [openDate, setOpenDate] = useState<string | null>(null);
@@ -25,7 +28,7 @@ function Shell() {
 
   return (
     <SafeAreaView style={styles.root}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <View style={styles.brandBar}>
         <Text style={styles.brand}>🍳 MealMate</Text>
       </View>
@@ -54,32 +57,35 @@ function Shell() {
 
 export default function App() {
   return (
-    <PlanProvider>
-      <Shell />
-    </PlanProvider>
+    <ThemeProvider>
+      <PlanProvider>
+        <Shell />
+      </PlanProvider>
+    </ThemeProvider>
   );
 }
 
-const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
-  brandBar: {
-    paddingHorizontal: spacing(4),
-    paddingTop: spacing(2),
-    paddingBottom: spacing(2),
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  brand: { fontSize: 20, fontWeight: '900', color: colors.primary },
-  tabBar: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.card,
-    paddingBottom: spacing(2),
-  },
-  tab: { flex: 1, alignItems: 'center', paddingVertical: spacing(3) },
-  tabIcon: { fontSize: 22, opacity: 0.5 },
-  tabLabel: { fontSize: 11, fontWeight: '700', color: colors.textMuted, marginTop: 2 },
-  tabActive: { opacity: 1, color: colors.primary },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    root: { flex: 1, backgroundColor: colors.bg },
+    brandBar: {
+      paddingHorizontal: spacing(4),
+      paddingTop: spacing(2),
+      paddingBottom: spacing(2),
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    brand: { fontSize: 20, fontWeight: '900', color: colors.primary },
+    tabBar: {
+      flexDirection: 'row',
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      backgroundColor: colors.card,
+      paddingBottom: spacing(2),
+    },
+    tab: { flex: 1, alignItems: 'center', paddingVertical: spacing(3) },
+    tabIcon: { fontSize: 22, opacity: 0.5 },
+    tabLabel: { fontSize: 11, fontWeight: '700', color: colors.textMuted, marginTop: 2 },
+    tabActive: { opacity: 1, color: colors.primary },
+  });

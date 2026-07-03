@@ -3,9 +3,12 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { usePlan } from '../context/PlanContext';
 import { AISLE_ORDER, buildShoppingList, itemKey } from '../engine/shopping';
 import { Card } from '../ui/components';
-import { colors, spacing } from '../ui/theme';
+import { Palette, spacing } from '../ui/theme';
+import { useTheme } from '../ui/ThemeContext';
 
 export function ShoppingScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { plan, prefs, checked, setChecked } = usePlan();
 
   const grouped = useMemo(
@@ -81,31 +84,32 @@ function formatQty(n: number): string {
   return n.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
 }
 
-const styles = StyleSheet.create({
-  h1: { fontSize: 26, fontWeight: '800', color: colors.text },
-  sub: { fontSize: 14, color: colors.textMuted, marginTop: spacing(1) },
-  aisle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: colors.primaryDark,
-    marginBottom: spacing(2),
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  row: { flexDirection: 'row', alignItems: 'center', padding: spacing(3) },
-  rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: colors.border,
-    marginRight: spacing(3),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxOn: { backgroundColor: colors.accent, borderColor: colors.accent },
-  check: { color: '#fff', fontWeight: '900', fontSize: 14 },
-  itemText: { fontSize: 15, color: colors.text, flex: 1 },
-  itemChecked: { textDecorationLine: 'line-through', color: colors.textMuted },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    h1: { fontSize: 26, fontWeight: '800', color: colors.text },
+    sub: { fontSize: 14, color: colors.textMuted, marginTop: spacing(1) },
+    aisle: {
+      fontSize: 14,
+      fontWeight: '800',
+      color: colors.primaryDark,
+      marginBottom: spacing(2),
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    row: { flexDirection: 'row', alignItems: 'center', padding: spacing(3) },
+    rowBorder: { borderBottomWidth: 1, borderBottomColor: colors.border },
+    checkbox: {
+      width: 24,
+      height: 24,
+      borderRadius: 6,
+      borderWidth: 2,
+      borderColor: colors.border,
+      marginRight: spacing(3),
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    checkboxOn: { backgroundColor: colors.accent, borderColor: colors.accent },
+    check: { color: colors.onAccent, fontWeight: '900', fontSize: 14 },
+    itemText: { fontSize: 15, color: colors.text, flex: 1 },
+    itemChecked: { textDecorationLine: 'line-through', color: colors.textMuted },
+  });

@@ -1,17 +1,26 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { usePlan } from '../context/PlanContext';
 import { DEFAULT_SPOONACULAR_KEY } from '../config';
 import { Allergen, DietTag, Preferences, Protein, SideType } from '../types';
+import { ThemeMode } from '../storage';
 import { Button, Card, Chip } from '../ui/components';
-import { colors, spacing } from '../ui/theme';
+import { Palette, spacing } from '../ui/theme';
+import { useTheme } from '../ui/ThemeContext';
 
 const DIETS: DietTag[] = ['vegetarian', 'vegan', 'gluten-free', 'dairy-free', 'high-protein', 'low-carb'];
 const ALLERGENS: Allergen[] = ['gluten', 'dairy', 'eggs', 'peanuts', 'treenuts', 'soy', 'shellfish', 'fish'];
 const SIDE_TYPES: SideType[] = ['vegetable', 'fruit', 'bread', 'starch', 'salad', 'dairy'];
 const PROTEINS: Protein[] = ['chicken', 'beef', 'pork', 'fish', 'seafood', 'vegetarian'];
+const THEME_MODES: { mode: ThemeMode; label: string }[] = [
+  { mode: 'auto', label: '📱 Auto' },
+  { mode: 'light', label: '☀️ Garden (light)' },
+  { mode: 'dark', label: '🌙 Midnight (dark)' },
+];
 
 export function SettingsScreen() {
+  const { colors, mode, setMode } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { prefs, setPrefs, recipeStatus, refreshRecipes } = usePlan();
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [apiKey, setApiKey] = useState(prefs.spoonacularApiKey ?? DEFAULT_SPOONACULAR_KEY);
@@ -33,6 +42,22 @@ export function SettingsScreen() {
       <Text style={styles.sub}>
         The essentials are up top. Everything else is optional — the app works great on defaults.
       </Text>
+
+      {/* --- Appearance --- */}
+      <Card style={{ marginTop: spacing(4) }}>
+        <Text style={styles.label}>Appearance</Text>
+        <View style={styles.chipWrap}>
+          {THEME_MODES.map((t) => (
+            <Chip
+              key={t.mode}
+              label={t.label}
+              active={mode === t.mode}
+              onPress={() => setMode(t.mode)}
+            />
+          ))}
+        </View>
+        <Text style={styles.hint}>Auto follows your phone's light/dark setting.</Text>
+      </Card>
 
       {/* --- The two things that matter most --- */}
       <Card style={{ marginTop: spacing(4) }}>
@@ -184,6 +209,8 @@ function Stepper({
   max: number;
   onChange: (v: number) => void;
 }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.stepper}>
       <Button label="–" small variant="secondary" onPress={() => onChange(Math.max(min, value - 1))} />
@@ -193,42 +220,43 @@ function Stepper({
   );
 }
 
-const styles = StyleSheet.create({
-  h1: { fontSize: 26, fontWeight: '800', color: colors.text },
-  sub: { fontSize: 14, color: colors.textMuted, marginTop: spacing(1), lineHeight: 20 },
-  label: { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: spacing(2) },
-  hint: { fontSize: 13, color: colors.textMuted, marginBottom: spacing(2), lineHeight: 18 },
-  chipWrap: { flexDirection: 'row', flexWrap: 'wrap' },
-  stepper: { flexDirection: 'row', alignItems: 'center' },
-  stepperValue: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.text,
-    marginHorizontal: spacing(5),
-    minWidth: 28,
-    textAlign: 'center',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    padding: spacing(3),
-    fontSize: 15,
-    color: colors.text,
-    marginBottom: spacing(3),
-  },
-  status: {
-    fontSize: 13,
-    color: colors.accent,
-    marginTop: spacing(3),
-    fontWeight: '600',
-    lineHeight: 18,
-  },
-  footer: {
-    fontSize: 13,
-    color: colors.textMuted,
-    marginTop: spacing(6),
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-});
+const makeStyles = (colors: Palette) =>
+  StyleSheet.create({
+    h1: { fontSize: 26, fontWeight: '800', color: colors.text },
+    sub: { fontSize: 14, color: colors.textMuted, marginTop: spacing(1), lineHeight: 20 },
+    label: { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: spacing(2) },
+    hint: { fontSize: 13, color: colors.textMuted, marginBottom: spacing(2), lineHeight: 18 },
+    chipWrap: { flexDirection: 'row', flexWrap: 'wrap' },
+    stepper: { flexDirection: 'row', alignItems: 'center' },
+    stepperValue: {
+      fontSize: 20,
+      fontWeight: '800',
+      color: colors.text,
+      marginHorizontal: spacing(5),
+      minWidth: 28,
+      textAlign: 'center',
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      padding: spacing(3),
+      fontSize: 15,
+      color: colors.text,
+      marginBottom: spacing(3),
+    },
+    status: {
+      fontSize: 13,
+      color: colors.accent,
+      marginTop: spacing(3),
+      fontWeight: '600',
+      lineHeight: 18,
+    },
+    footer: {
+      fontSize: 13,
+      color: colors.textMuted,
+      marginTop: spacing(6),
+      textAlign: 'center',
+      fontStyle: 'italic',
+    },
+  });
