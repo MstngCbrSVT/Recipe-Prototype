@@ -13,13 +13,19 @@ const KEYS = {
 };
 
 export const DEFAULT_PREFS: Preferences = {
-  servings: 4,
+  servings: 2,
   dinnersPerWeek: 5,
   sidesPerMeal: 2,
   diet: [],
   avoidAllergens: [],
   avoidSideTypes: [],
   dislikedProteins: [],
+  adults: 2,
+  kids: 0,
+  cuisines: [],
+  maxWeeknightMinutes: 999,
+  leftoversPref: 'some',
+  onboarded: false,
 };
 
 async function load<T>(key: string, fallback: T): Promise<T> {
@@ -42,7 +48,12 @@ async function save(key: string, value: unknown): Promise<void> {
 export const loadPlan = () => load<DayPlan[]>(KEYS.plan, []);
 export const savePlan = (plan: DayPlan[]) => save(KEYS.plan, plan);
 
-export const loadPrefs = () => load<Preferences>(KEYS.prefs, DEFAULT_PREFS);
+// Merge over defaults so prefs saved by an older app version get any new fields
+// backfilled (e.g. cuisines, maxWeeknightMinutes, onboarded).
+export const loadPrefs = async (): Promise<Preferences> => ({
+  ...DEFAULT_PREFS,
+  ...(await load<Partial<Preferences>>(KEYS.prefs, {})),
+});
 export const savePrefs = (prefs: Preferences) => save(KEYS.prefs, prefs);
 
 export const loadChecked = () => load<Record<string, boolean>>(KEYS.checked, {});

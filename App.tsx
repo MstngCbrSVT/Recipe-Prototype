@@ -5,6 +5,7 @@ import { PlanScreen } from './src/screens/PlanScreen';
 import { ShoppingScreen } from './src/screens/ShoppingScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { RecipeDetailScreen } from './src/screens/RecipeDetailScreen';
+import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { Loader } from './src/ui/components';
 import { Palette, spacing } from './src/ui/theme';
 import { ThemeProvider, useTheme } from './src/ui/ThemeContext';
@@ -20,11 +21,21 @@ const TABS: { key: Tab; label: string; icon: string }[] = [
 function Shell() {
   const { colors, isDark } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const { ready } = usePlan();
+  const { ready, prefs } = usePlan();
   const [tab, setTab] = useState<Tab>('plan');
   const [openDate, setOpenDate] = useState<string | null>(null);
 
   if (!ready) return <Loader />;
+
+  // First launch → the intro flow. Completing/skipping it sets onboarded = true.
+  if (!prefs.onboarded) {
+    return (
+      <SafeAreaView style={styles.root}>
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+        <OnboardingScreen />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.root}>

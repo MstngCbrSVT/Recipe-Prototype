@@ -12,12 +12,34 @@ function passesHardFilters(r: Recipe, prefs: Preferences): boolean {
   return true;
 }
 
+// Loose mapping from the onboarding cuisine buttons to recipe.cuisine strings.
+const CUISINE_ALIASES: Record<string, string[]> = {
+  Asian: ['asian', 'chinese', 'japanese', 'thai', 'korean', 'vietnamese'],
+  Comfort: ['american'],
+  BBQ: ['american', 'bbq'],
+  Mediterranean: ['mediterranean', 'greek'],
+};
+
+function cuisineMatches(recipeCuisine: string, preferred: string[]): boolean {
+  const rc = recipeCuisine.toLowerCase();
+  return preferred.some((p) => {
+    const aliases = CUISINE_ALIASES[p] ?? [p.toLowerCase()];
+    return aliases.includes(rc);
+  });
+}
+
 function eligibleMains(prefs: Preferences): Recipe[] {
-  return catalogMains().filter(
+  let pool = catalogMains().filter(
     (m) =>
       passesHardFilters(m, prefs) &&
       !(m.protein && prefs.dislikedProteins.includes(m.protein)),
   );
+  // Weeknight time cap — but never let it empty the pool.
+  if (prefs.maxWeeknightMinutes && prefs.maxWeeknightMinutes < 999) {
+    const quick = pool.filter((m) => m.totalMinutes <= prefs.maxWeeknightMinutes);
+    if (quick.length > 0) pool = quick;
+  }
+  return pool;
 }
 
 function eligibleSides(prefs: Preferences): Recipe[] {
@@ -62,6 +84,12 @@ export function generateMeal(
   // Relax progressively so we always return a meal.
   if (pool.length === 0) pool = mains.filter((m) => !recentProteins.includes(m.protein ?? ''));
   if (pool.length === 0) pool = mains;
+
+  // Soft preference toward liked cuisines (only if it doesn't empty the pool).
+  if (prefs.cuisines?.length) {
+    const liked = pool.filter((m) => cuisineMatches(m.cuisine, prefs.cuisines));
+    if (liked.length > 0) pool = liked;
+  }
 
   const main = pick(pool);
 

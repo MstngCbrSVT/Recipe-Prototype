@@ -99,6 +99,18 @@ export interface DayPlan {
   leftoverOf?: string; // ISO date of the day the food was actually cooked
 }
 
+export type Goal = 'save' | 'time' | 'healthy' | 'variety';
+export type Cuisine =
+  | 'Italian'
+  | 'Mexican'
+  | 'American'
+  | 'Asian'
+  | 'Mediterranean'
+  | 'Indian'
+  | 'Comfort'
+  | 'BBQ';
+export type LeftoversPref = 'yes' | 'some' | 'no';
+
 export interface Preferences {
   servings: number;
   dinnersPerWeek: number;
@@ -108,6 +120,19 @@ export interface Preferences {
   avoidSideTypes: SideType[]; // e.g. exclude 'bread' for low-carb
   dislikedProteins: Protein[]; // learned from regenerate/skip behaviour
   spoonacularApiKey?: string; // advanced, optional — unlocks live recipes
+  // Captured during onboarding, editable in Prefs:
+  adults: number;
+  kids: number;
+  cuisines: Cuisine[]; // soft preference toward these
+  maxWeeknightMinutes: number; // cap on a main's cook time (999 = no limit)
+  goal?: Goal; // sets tone; 'save' will bias toward ingredient reuse
+  leftoversPref: LeftoversPref;
+  onboarded: boolean; // false until the intro flow is completed or skipped
+}
+
+// Household size → servings (kids eat smaller portions).
+export function servingsFor(adults: number, kids: number): number {
+  return Math.max(1, adults + Math.round(kids * 0.6));
 }
 
 // A merged, coordinated cooking timeline so every dish finishes together.
