@@ -49,9 +49,9 @@ export function sanitizeLeftovers(days: DayPlan[], prefs: Preferences): DayPlan[
       !!src.mainId &&
       !!srcMain?.leftoverFriendly;
     if (valid) return d;
-    // Repair: turn this back into a freshly cooked meal.
+    // Repair: turn this back into a freshly cooked meal (needs shopping again).
     const meal = generateMeal(prefs, [], []);
     if (!meal) return { ...d, leftoverOf: undefined, skipped: true };
-    return { ...d, leftoverOf: undefined, mainId: meal.mainId, sideIds: meal.sideIds, skipped: false };
+    return { ...d, leftoverOf: undefined, mainId: meal.mainId, sideIds: meal.sideIds, skipped: false, shopped: false };
   });
 }

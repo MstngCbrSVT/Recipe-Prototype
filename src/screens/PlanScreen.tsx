@@ -235,6 +235,12 @@ function DayCard({
             <Text style={styles.lockBadge}>Locked</Text>
           </View>
         )}
+        {day.shopped && !isLeftover && (
+          <View style={styles.badgeRow}>
+            <Icon name="check" size={12} color={colors.accent} strokeWidth={2.6} />
+            <Text style={styles.leftoverBadge}>Shopped</Text>
+          </View>
+        )}
         {isLeftover && (
           <View style={styles.badgeRow}>
             <Icon name="refresh" size={12} color={colors.accent} strokeWidth={2} />

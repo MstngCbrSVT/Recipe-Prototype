@@ -97,6 +97,9 @@ export interface DayPlan {
   // date. It does no cooking of its own and adds nothing new to the shopping
   // list (the source day is scaled up to cover it).
   leftoverOf?: string; // ISO date of the day the food was actually cooked
+  // Shopping flow: true once the groceries for this meal have been bought, so it
+  // drops off the shopping list. Reset to false when the meal changes.
+  shopped: boolean;
 }
 
 // Categories of expensive + perishable ingredients worth highlighting when

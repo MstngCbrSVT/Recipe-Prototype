@@ -36,6 +36,7 @@ interface PlanContextValue {
   swapDays: (dateA: string, dateB: string) => void;
   makeLeftovers: (date: string) => void;
   clearLeftovers: (date: string) => void;
+  setShopped: (dates: string[], value: boolean) => void;
   setChecked: (checked: Record<string, boolean>) => void;
   recipeStatus: RecipeStatus;
   refreshRecipes: (overrideKey?: string) => Promise<void>;
@@ -89,7 +90,7 @@ function buildWeek(prefs: Preferences, existing: DayPlan[]): DayPlan[] {
     const meal = generateMeal(prefs, recentArg, recentCuisines, undefined, reuse);
     if (!meal) {
       // No eligible recipe (over-constrained filters) — keep a skipped slot.
-      result.push({ date, mainId: '', sideIds: [], locked: false, skipped: true });
+      result.push({ date, mainId: '', sideIds: [], locked: false, skipped: true, shopped: false });
       continue;
     }
     const day: DayPlan = {
@@ -98,6 +99,7 @@ function buildWeek(prefs: Preferences, existing: DayPlan[]): DayPlan[] {
       sideIds: meal.sideIds,
       locked: false,
       skipped: prior?.skipped ?? false,
+      shopped: false, // a freshly generated meal hasn't been shopped for
     };
     result.push(day);
     trackVariety(day, recentProteins, recentCuisines);
@@ -202,7 +204,8 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
             if (d.date !== date || d.locked || d.leftoverOf) return d;
             const meal = generateMeal(prefs, [], [], d.mainId);
             if (!meal) return d;
-            return { ...d, mainId: meal.mainId, sideIds: meal.sideIds, skipped: false };
+            // New meal → needs shopping again.
+            return { ...d, mainId: meal.mainId, sideIds: meal.sideIds, skipped: false, shopped: false };
           }),
           prefs,
         ),
@@ -241,7 +244,7 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
         if (!target) return cur;
         const next = cur.map((d) =>
           d.date === target.date
-            ? { ...d, leftoverOf: date, mainId: '', sideIds: [], skipped: false }
+            ? { ...d, leftoverOf: date, mainId: '', sideIds: [], skipped: false, shopped: false }
             : d,
         );
         return sanitizeLeftovers(next, prefs);
@@ -253,12 +256,14 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
             if (d.date !== date || !d.leftoverOf) return d;
             const meal = generateMeal(prefs, [], []);
             return meal
-              ? { ...d, leftoverOf: undefined, mainId: meal.mainId, sideIds: meal.sideIds }
+              ? { ...d, leftoverOf: undefined, mainId: meal.mainId, sideIds: meal.sideIds, shopped: false }
               : { ...d, leftoverOf: undefined, skipped: true };
           }),
           prefs,
         ),
       ),
+    setShopped: (dates, value) =>
+      setPlan((cur) => cur.map((d) => (dates.includes(d.date) ? { ...d, shopped: value } : d))),
     setChecked: setCheckedState,
     recipeStatus,
     refreshRecipes: async (overrideKey?: string) => {

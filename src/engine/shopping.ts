@@ -39,8 +39,9 @@ export function buildShoppingList(
   }
 
   for (const day of days) {
-    // Leftover days do no cooking; the source day already covers them.
-    if (day.skipped || day.leftoverOf) continue;
+    // Leftover days do no cooking; the source day already covers them. Shopped
+    // meals are already bought, so they drop off the list.
+    if (day.skipped || day.leftoverOf || day.shopped) continue;
     const portions = portionsByDate.get(day.date) ?? 1;
     const recipeIds = [day.mainId, ...day.sideIds];
     for (const id of recipeIds) {
