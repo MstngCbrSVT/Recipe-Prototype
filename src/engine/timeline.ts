@@ -1,5 +1,5 @@
-import { TimelineEntry } from '../types';
-import { RECIPE_BY_ID } from '../data/recipes';
+import { Recipe, TimelineEntry } from '../types';
+import { recipeById } from '../data/catalog';
 
 // Build a single coordinated cooking plan so every dish finishes at the same
 // moment. Each dish is scheduled to *end* at T = the longest dish's total time;
@@ -10,7 +10,9 @@ export function buildTimeline(mainId: string, sideIds: string[]): {
   entries: TimelineEntry[];
   totalMinutes: number;
 } {
-  const recipes = [mainId, ...sideIds].map((id) => RECIPE_BY_ID[id]).filter(Boolean);
+  const recipes = [mainId, ...sideIds]
+    .map((id) => recipeById(id))
+    .filter((r): r is Recipe => !!r);
   if (recipes.length === 0) return { entries: [], totalMinutes: 0 };
 
   const finishAt = Math.max(...recipes.map((r) => r.totalMinutes));

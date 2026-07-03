@@ -1,5 +1,5 @@
 import { Recipe, Preferences, SideType } from '../types';
-import { MAINS, SIDES, RECIPE_BY_ID } from '../data/recipes';
+import { mains as catalogMains, sides as catalogSides, recipeById } from '../data/catalog';
 
 // Side types that satisfy the "every meal needs something fresh" rule.
 const FRESH_SIDE_TYPES: SideType[] = ['vegetable', 'fruit', 'salad'];
@@ -13,7 +13,7 @@ function passesHardFilters(r: Recipe, prefs: Preferences): boolean {
 }
 
 function eligibleMains(prefs: Preferences): Recipe[] {
-  return MAINS.filter(
+  return catalogMains().filter(
     (m) =>
       passesHardFilters(m, prefs) &&
       !(m.protein && prefs.dislikedProteins.includes(m.protein)),
@@ -21,7 +21,7 @@ function eligibleMains(prefs: Preferences): Recipe[] {
 }
 
 function eligibleSides(prefs: Preferences): Recipe[] {
-  return SIDES.filter(
+  return catalogSides().filter(
     (s) =>
       passesHardFilters(s, prefs) &&
       !(s.sideType && prefs.avoidSideTypes.includes(s.sideType)),
@@ -92,12 +92,16 @@ export function generateMeal(
 // as long as its slowest dish — not the sum. This is the "how long will this
 // take" number surfaced on each day.
 export function mealTotalMinutes(mainId: string, sideIds: string[]): number {
-  const recipes = [mainId, ...sideIds].map((id) => RECIPE_BY_ID[id]).filter(Boolean);
+  const recipes = [mainId, ...sideIds]
+    .map((id) => recipeById(id))
+    .filter((r): r is Recipe => !!r);
   if (recipes.length === 0) return 0;
   return Math.max(...recipes.map((r) => r.totalMinutes));
 }
 
 export function mealActiveMinutes(mainId: string, sideIds: string[]): number {
-  const recipes = [mainId, ...sideIds].map((id) => RECIPE_BY_ID[id]).filter(Boolean);
+  const recipes = [mainId, ...sideIds]
+    .map((id) => recipeById(id))
+    .filter((r): r is Recipe => !!r);
   return recipes.reduce((sum, r) => sum + r.activeMinutes, 0);
 }

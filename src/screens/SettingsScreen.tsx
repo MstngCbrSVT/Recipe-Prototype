@@ -11,7 +11,7 @@ const SIDE_TYPES: SideType[] = ['vegetable', 'fruit', 'bread', 'starch', 'salad'
 const PROTEINS: Protein[] = ['chicken', 'beef', 'pork', 'fish', 'seafood', 'vegetarian'];
 
 export function SettingsScreen() {
-  const { prefs, setPrefs } = usePlan();
+  const { prefs, setPrefs, recipeStatus, refreshRecipes } = usePlan();
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [apiKey, setApiKey] = useState(prefs.spoonacularApiKey ?? '');
 
@@ -129,10 +129,11 @@ export function SettingsScreen() {
           </Card>
 
           <Card style={{ marginTop: spacing(3) }}>
-            <Text style={styles.label}>🔑 Spoonacular API key</Text>
+            <Text style={styles.label}>🔑 Spoonacular (free tier)</Text>
             <Text style={styles.hint}>
-              Optional. Paste a key to pull in live recipes later. Leave blank to use the built-in
-              recipe library.
+              Optional. Paste your key and load live recipes — they're merged with the built-in
+              library and cached, so a single fetch (2 API calls) covers all your planning. Leave
+              blank to use the built-in recipes only.
             </Text>
             <TextInput
               style={styles.input}
@@ -144,10 +145,21 @@ export function SettingsScreen() {
               placeholderTextColor={colors.textMuted}
             />
             <Button
-              label="Save key"
+              label={recipeStatus.loading ? '⏳ Loading…' : '⬇️ Save key & load recipes'}
               small
-              onPress={() => update({ spoonacularApiKey: apiKey.trim() || undefined })}
+              onPress={async () => {
+                update({ spoonacularApiKey: apiKey.trim() || undefined });
+                await refreshRecipes(apiKey.trim());
+              }}
             />
+            {recipeStatus.message && (
+              <Text style={styles.status}>
+                {recipeStatus.externalCount > 0
+                  ? `✅ ${recipeStatus.externalCount} live recipes loaded. `
+                  : ''}
+                {recipeStatus.message}
+              </Text>
+            )}
           </Card>
         </>
       )}
@@ -202,6 +214,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.text,
     marginBottom: spacing(3),
+  },
+  status: {
+    fontSize: 13,
+    color: colors.accent,
+    marginTop: spacing(3),
+    fontWeight: '600',
+    lineHeight: 18,
   },
   footer: {
     fontSize: 13,

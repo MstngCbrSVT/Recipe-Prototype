@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DayPlan, Preferences } from './types';
+import { DayPlan, Preferences, Recipe } from './types';
 
 // Local persistence so a locked week "sticks" when the user returns — no account
 // required at entry (accounts / cloud sync are a later, opt-in feature).
@@ -8,6 +8,7 @@ const KEYS = {
   plan: 'mealapp.plan.v1',
   prefs: 'mealapp.prefs.v1',
   checked: 'mealapp.shopping.checked.v1',
+  pool: 'mealapp.recipepool.v1',
 };
 
 export const DEFAULT_PREFS: Preferences = {
@@ -45,3 +46,8 @@ export const savePrefs = (prefs: Preferences) => save(KEYS.prefs, prefs);
 
 export const loadChecked = () => load<Record<string, boolean>>(KEYS.checked, {});
 export const saveChecked = (checked: Record<string, boolean>) => save(KEYS.checked, checked);
+
+// Cached Spoonacular recipe pool so a fetched set survives app restarts without
+// spending more of the daily free-tier quota.
+export const loadRecipePool = () => load<Recipe[]>(KEYS.pool, []);
+export const saveRecipePool = (pool: Recipe[]) => save(KEYS.pool, pool);

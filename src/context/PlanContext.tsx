@@ -1,16 +1,25 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { DayPlan, Preferences } from '../types';
 import { generateMeal } from '../engine/planner';
-import { RECIPE_BY_ID } from '../data/recipes';
+import { recipeById, setExternalRecipes } from '../data/catalog';
+import { refreshFromSpoonacular } from '../providers/recipeProvider';
 import {
   DEFAULT_PREFS,
   loadChecked,
   loadPlan,
   loadPrefs,
+  loadRecipePool,
   saveChecked,
   savePlan,
   savePrefs,
+  saveRecipePool,
 } from '../storage';
+
+export interface RecipeStatus {
+  loading: boolean;
+  message: string | null;
+  externalCount: number;
+}
 
 interface PlanContextValue {
   ready: boolean;
@@ -24,6 +33,8 @@ interface PlanContextValue {
   toggleSkip: (date: string) => void;
   swapDays: (dateA: string, dateB: string) => void;
   setChecked: (checked: Record<string, boolean>) => void;
+  recipeStatus: RecipeStatus;
+  refreshRecipes: (overrideKey?: string) => Promise<void>;
 }
 
 const PlanContext = createContext<PlanContextValue | null>(null);
@@ -76,7 +87,7 @@ function buildWeek(prefs: Preferences, existing: DayPlan[]): DayPlan[] {
 }
 
 function trackVariety(day: DayPlan, proteins: string[], cuisines: string[]): void {
-  const main = RECIPE_BY_ID[day.mainId];
+  const main = recipeById(day.mainId);
   if (main?.protein) proteins.push(main.protein);
   if (main?.cuisine) cuisines.push(main.cuisine);
 }
@@ -86,12 +97,27 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
   const [prefs, setPrefsState] = useState<Preferences>(DEFAULT_PREFS);
   const [plan, setPlan] = useState<DayPlan[]>([]);
   const [checked, setCheckedState] = useState<Record<string, boolean>>({});
+  const [recipeStatus, setRecipeStatus] = useState<RecipeStatus>({
+    loading: false,
+    message: null,
+    externalCount: 0,
+  });
   const hydrated = useRef(false);
 
   // Hydrate persisted state on first mount.
   useEffect(() => {
     (async () => {
-      const [p, pr, ch] = await Promise.all([loadPlan(), loadPrefs(), loadChecked()]);
+      const [p, pr, ch, pool] = await Promise.all([
+        loadPlan(),
+        loadPrefs(),
+        loadChecked(),
+        loadRecipePool(),
+      ]);
+      // Restore a previously fetched Spoonacular pool without a new API call.
+      if (pool.length > 0) {
+        setExternalRecipes(pool);
+        setRecipeStatus((s) => ({ ...s, externalCount: pool.length }));
+      }
       setPrefsState(pr);
       setCheckedState(ch);
       // First run with no saved plan → generate one immediately (zero setup).
@@ -148,6 +174,32 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
         });
       }),
     setChecked: setCheckedState,
+    recipeStatus,
+    refreshRecipes: async (overrideKey?: string) => {
+      // overrideKey lets the caller pass a just-typed key before prefs state
+      // has committed (setState is async).
+      const key = (overrideKey ?? prefs.spoonacularApiKey)?.trim();
+      if (!key) {
+        setRecipeStatus({
+          loading: false,
+          message: 'Add your Spoonacular API key first.',
+          externalCount: 0,
+        });
+        return;
+      }
+      setRecipeStatus((s) => ({ ...s, loading: true, message: 'Fetching recipes…' }));
+      const outcome = await refreshFromSpoonacular(key, prefs);
+      if (outcome.ok && outcome.recipes) {
+        await saveRecipePool(outcome.recipes);
+        // Reflow unlocked days so the new recipes show up right away.
+        setPlan((cur) => buildWeek(prefs, cur));
+      }
+      setRecipeStatus({
+        loading: false,
+        message: outcome.message,
+        externalCount: outcome.count,
+      });
+    },
   };
 
   return <PlanContext.Provider value={value}>{children}</PlanContext.Provider>;

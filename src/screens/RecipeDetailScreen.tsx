@@ -1,7 +1,8 @@
 import React from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { usePlan } from '../context/PlanContext';
-import { RECIPE_BY_ID } from '../data/recipes';
+import { Recipe } from '../types';
+import { recipeById } from '../data/catalog';
 import { buildTimeline } from '../engine/timeline';
 import { mealActiveMinutes } from '../engine/planner';
 import { Button, Card } from '../ui/components';
@@ -20,7 +21,9 @@ export function RecipeDetailScreen({ date, onClose }: { date: string; onClose: (
     );
   }
 
-  const recipes = [day.mainId, ...day.sideIds].map((id) => RECIPE_BY_ID[id]).filter(Boolean);
+  const recipes = [day.mainId, ...day.sideIds]
+    .map((id) => recipeById(id))
+    .filter((r): r is Recipe => !!r);
   const { entries, totalMinutes } = buildTimeline(day.mainId, day.sideIds);
   const active = mealActiveMinutes(day.mainId, day.sideIds);
 

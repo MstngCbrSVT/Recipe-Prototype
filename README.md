@@ -70,11 +70,33 @@ src/
   ui/                       Theme + shared components
 ```
 
+## Spoonacular (free tier) — now wired up
+
+Add your key in **Prefs → Advanced options → Spoonacular** and tap
+**Save key & load recipes**. Live recipes are normalized into the app's `Recipe`
+shape and **merged with** the built-in library (so the fresh-side guarantee and
+offline fallback still hold).
+
+Designed around the free tier's limits (150 points/day, ~1 req/sec):
+
+- **Two requests per refresh** — one for mains, one for sides — using
+  `complexSearch` with `addRecipeInformation` + `fillIngredients`, so full
+  ingredients and instructions come back in the same call (no per-recipe
+  follow-ups).
+- **Cached** to local storage — planning, regenerating, and swapping never hit
+  the network again. A restart reuses the saved pool without spending quota.
+- **Safety filters pushed server-side** — your diet and allergy prefs become
+  `diet` / `intolerances` params so results come back pre-filtered.
+- **Graceful failure** — quota-reached / bad-key / offline all fall back to the
+  local library with a clear status message; nothing crashes.
+
+Normalization maps Spoonacular's `dishTypes`, diet booleans, `extendedIngredients`
+(with aisle), and `analyzedInstructions` into our schema, inferring protein,
+side type, allergens (heuristic), and active-vs-passive steps. See
+`src/providers/spoonacular.ts`.
+
 ## Planned next (v2+)
 
-- **Spoonacular integration** — a key field already exists in Preferences and a
-  provider seam in `providers/recipeProvider.ts`; v2 maps Spoonacular responses
-  into the `Recipe` shape behind the same interface, no engine changes needed.
 - **Influencer recipes** — the `Recipe.source` field already carries
   `creator` / `videoUrl` (see the salmon recipe), and the detail screen links
   out. v2 surfaces "find a similar recipe by Josh Weissman / Sam the Cooking

@@ -1,5 +1,5 @@
 import { Aisle, DayPlan, Ingredient } from '../types';
-import { RECIPE_BY_ID } from '../data/recipes';
+import { recipeById } from '../data/catalog';
 
 export interface ShoppingItem {
   name: string;
@@ -33,7 +33,7 @@ export function buildShoppingList(
     if (day.skipped) continue;
     const recipeIds = [day.mainId, ...day.sideIds];
     for (const id of recipeIds) {
-      const recipe = RECIPE_BY_ID[id];
+      const recipe = recipeById(id);
       if (!recipe) continue;
       const scale = servings / recipe.baseServings;
       for (const ing of recipe.ingredients) {

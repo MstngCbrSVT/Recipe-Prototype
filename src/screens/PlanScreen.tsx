@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { usePlan } from '../context/PlanContext';
-import { RECIPE_BY_ID } from '../data/recipes';
+import { recipeById } from '../data/catalog';
 import { mealActiveMinutes, mealTotalMinutes } from '../engine/planner';
 import { DayPlan } from '../types';
 import { Button, Card } from '../ui/components';
@@ -93,7 +93,7 @@ function DayCard({
   onSkip: () => void;
   onSwap: () => void;
 }) {
-  const main = RECIPE_BY_ID[day.mainId];
+  const main = recipeById(day.mainId);
   const total = mealTotalMinutes(day.mainId, day.sideIds);
   const active = mealActiveMinutes(day.mainId, day.sideIds);
 
@@ -122,7 +122,7 @@ function DayCard({
             <View style={{ flex: 1 }}>
               <Text style={styles.mainTitle}>{main.title}</Text>
               <Text style={styles.sides}>
-                {day.sideIds.map((id) => RECIPE_BY_ID[id]?.title).filter(Boolean).join(' · ')}
+                {day.sideIds.map((id) => recipeById(id)?.title).filter(Boolean).join(' · ')}
               </Text>
               <View style={styles.metaRow}>
                 <Text style={styles.metaPill}>⏱️ {total} min total</Text>
