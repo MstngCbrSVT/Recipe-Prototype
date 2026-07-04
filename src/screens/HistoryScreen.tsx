@@ -31,6 +31,7 @@ export function HistoryScreen() {
       style={{ backgroundColor: colors.bg }}
       contentContainerStyle={{ padding: spacing(4), paddingBottom: spacing(20) }}
     >
+      <Text style={styles.eyebrow}>YOUR KITCHEN</Text>
       <Text style={styles.h1}>Cook History</Text>
       <Text style={styles.sub}>
         Rate what you made — loved meals come back around sooner, disliked ones stay away.
@@ -95,7 +96,8 @@ type Styles = ReturnType<typeof makeStyles>;
 
 const makeStyles = (colors: Palette) =>
   StyleSheet.create({
-    h1: { fontSize: 26, fontWeight: '800', color: colors.text },
+    eyebrow: { fontSize: 13, fontWeight: '700', letterSpacing: 0.5, color: colors.textMuted, marginBottom: 2 },
+    h1: { fontSize: 32, fontWeight: '700', letterSpacing: -0.8, color: colors.text },
     sub: { fontSize: 14, color: colors.textMuted, marginTop: spacing(1), lineHeight: 20 },
     emptyTitle: { fontSize: 17, fontWeight: '800', color: colors.text, marginTop: spacing(2) },
     emptySub: { fontSize: 13, color: colors.textMuted, marginTop: spacing(1), textAlign: 'center', lineHeight: 19 },

@@ -38,16 +38,14 @@ export function Button({
       : variant === 'danger'
         ? colors.danger
         : variant === 'secondary'
-          ? colors.accent
+          ? colors.primaryWash
           : 'transparent';
   const fg =
-    variant === 'ghost'
+    variant === 'ghost' || variant === 'secondary'
       ? colors.primary
       : variant === 'primary'
         ? colors.onPrimary
-        : variant === 'secondary'
-          ? colors.onAccent
-          : '#fff';
+        : '#fff';
   return (
     <Pressable
       onPress={onPress}
@@ -102,7 +100,7 @@ const makeStyles = (colors: Palette) =>
   StyleSheet.create({
     card: {
       backgroundColor: colors.card,
-      borderRadius: radius.md,
+      borderRadius: radius.lg,
       padding: spacing(4),
       borderWidth: 1,
       borderColor: colors.border,
@@ -110,7 +108,7 @@ const makeStyles = (colors: Palette) =>
     button: {
       paddingVertical: spacing(3),
       paddingHorizontal: spacing(4),
-      borderRadius: radius.sm,
+      borderRadius: radius.md,
       flexDirection: 'row',
       gap: spacing(2),
       alignItems: 'center',

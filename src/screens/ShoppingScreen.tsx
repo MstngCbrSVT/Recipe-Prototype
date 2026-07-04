@@ -45,6 +45,7 @@ export function ShoppingScreen() {
       style={{ backgroundColor: colors.bg }}
       contentContainerStyle={{ padding: spacing(4), paddingBottom: spacing(20) }}
     >
+      <Text style={styles.eyebrow}>GROCERIES</Text>
       <Text style={styles.h1}>Shopping List</Text>
       {toShop.length > 0 ? (
         <Text style={styles.sub}>
@@ -144,7 +145,8 @@ function formatQty(n: number): string {
 
 const makeStyles = (colors: Palette) =>
   StyleSheet.create({
-    h1: { fontSize: 26, fontWeight: '800', color: colors.text },
+    eyebrow: { fontSize: 13, fontWeight: '700', letterSpacing: 0.5, color: colors.textMuted, marginBottom: 2 },
+    h1: { fontSize: 32, fontWeight: '700', letterSpacing: -0.8, color: colors.text },
     sub: { fontSize: 14, color: colors.textMuted, marginTop: spacing(1), lineHeight: 20 },
     caughtUp: { fontSize: 17, fontWeight: '800', color: colors.text, marginTop: spacing(2) },
     caughtUpSub: { fontSize: 13, color: colors.textMuted, marginTop: spacing(1), textAlign: 'center', lineHeight: 19 },

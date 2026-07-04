@@ -35,8 +35,8 @@ const LEFTOVER_OPTS: { v: LeftoversPref; label: string }[] = [
 ];
 const THEME_MODES: { mode: ThemeMode; label: string }[] = [
   { mode: 'auto', label: 'Auto' },
-  { mode: 'light', label: 'Garden (light)' },
-  { mode: 'dark', label: 'Midnight (dark)' },
+  { mode: 'light', label: 'Light' },
+  { mode: 'dark', label: 'Dark' },
 ];
 
 export function SettingsScreen() {
@@ -61,6 +61,7 @@ export function SettingsScreen() {
       style={{ backgroundColor: colors.bg }}
       contentContainerStyle={{ padding: spacing(4), paddingBottom: spacing(20) }}
     >
+      <Text style={styles.eyebrow}>SETTINGS</Text>
       <Text style={styles.h1}>Preferences</Text>
       <Text style={styles.sub}>Everything from the intro lives here — change any of it anytime.</Text>
 
@@ -240,7 +241,8 @@ function Stepper({
 
 const makeStyles = (colors: Palette) =>
   StyleSheet.create({
-    h1: { fontSize: 26, fontWeight: '800', color: colors.text },
+    eyebrow: { fontSize: 13, fontWeight: '700', letterSpacing: 0.5, color: colors.textMuted, marginBottom: 2 },
+    h1: { fontSize: 32, fontWeight: '700', letterSpacing: -0.8, color: colors.text },
     sub: { fontSize: 14, color: colors.textMuted, marginTop: spacing(1), lineHeight: 20 },
     label: { fontSize: 15, fontWeight: '700', color: colors.text, marginBottom: spacing(2) },
     hint: { fontSize: 13, color: colors.textMuted, marginTop: spacing(2), lineHeight: 18 },

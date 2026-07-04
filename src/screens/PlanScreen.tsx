@@ -73,7 +73,8 @@ export function PlanScreen({ onOpenDay }: { onOpenDay: (date: string) => void })
       style={{ backgroundColor: colors.bg }}
       contentContainerStyle={{ padding: spacing(4), paddingBottom: spacing(20) }}
     >
-      <Text style={styles.h1}>This Week's Dinners</Text>
+      <Text style={styles.eyebrow}>THIS WEEK</Text>
+      <Text style={styles.h1}>Dinners</Text>
       <Text style={styles.sub}>
         Tap a day for the cook plan. Lock what you love, and cook once to eat twice with Make extra.
       </Text>
@@ -333,42 +334,31 @@ function DayCard({
       <View style={styles.actions}>
         {isLeftover ? (
           <>
-            <Button label="Cook fresh instead" icon="chef" onPress={onCookFresh} variant="ghost" small />
-            <Button label="Skip" icon="ban" onPress={onSkip} variant="ghost" small />
+            <ActionBtn label="Cook fresh instead" icon="chef" onPress={onCookFresh} />
+            <ActionBtn label="Skip" icon="ban" onPress={onSkip} tone="muted" />
           </>
         ) : (
           <>
-            <Button
+            <ActionBtn
               label={day.locked ? 'Unlock' : 'Lock'}
               icon={day.locked ? 'unlock' : 'lock'}
               onPress={onLock}
-              variant="ghost"
-              small
             />
             {!day.skipped && !day.locked && (
-              <Button label="New" icon="dice" onPress={onRegenerate} variant="ghost" small />
+              <ActionBtn label="New" icon="dice" onPress={onRegenerate} />
             )}
-            {canExtend && (
-              <Button label="Make extra" icon="pot" onPress={onMakeLeftovers} variant="ghost" small />
-            )}
+            {canExtend && <ActionBtn label="Make extra" icon="pot" onPress={onMakeLeftovers} />}
             {!day.locked && (
-              <Button
-                label={swapActive ? 'Picking…' : 'Swap'}
-                icon="swap"
-                onPress={onSwap}
-                variant="ghost"
-                small
-              />
+              <ActionBtn label={swapActive ? 'Picking…' : 'Swap'} icon="swap" onPress={onSwap} />
             )}
             {canLog && !day.skipped && (
-              <Button label="Made it" icon="check" onPress={onMade} variant="ghost" small />
+              <ActionBtn label="Made it" icon="check" onPress={onMade} tone="accent" />
             )}
-            <Button
+            <ActionBtn
               label={day.skipped ? 'Add meal' : 'Skip'}
               icon={day.skipped ? 'plus' : 'ban'}
               onPress={onSkip}
-              variant="ghost"
-              small
+              tone="muted"
             />
           </>
         )}
@@ -377,12 +367,50 @@ function DayCard({
   );
 }
 
+function ActionBtn({
+  label,
+  icon,
+  onPress,
+  tone = 'primary',
+}: {
+  label: string;
+  icon: IconName;
+  onPress: () => void;
+  tone?: 'primary' | 'accent' | 'muted';
+}) {
+  const { colors } = useTheme();
+  const color = tone === 'muted' ? colors.textMuted : tone === 'accent' ? colors.accent : colors.primary;
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        paddingVertical: 6,
+        paddingHorizontal: spacing(2),
+        opacity: pressed ? 0.5 : 1,
+      })}
+    >
+      <Icon name={icon} size={16} color={color} strokeWidth={2} />
+      <Text style={{ color, fontWeight: '700', fontSize: 13 }}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const makeStyles = (colors: Palette) =>
   StyleSheet.create({
-    h1: { fontSize: 26, fontWeight: '800', color: colors.text },
+    eyebrow: {
+      fontSize: 13,
+      fontWeight: '700',
+      letterSpacing: 0.5,
+      color: colors.textMuted,
+      marginBottom: 2,
+    },
+    h1: { fontSize: 32, fontWeight: '700', letterSpacing: -0.8, color: colors.text },
     sub: { fontSize: 14, color: colors.textMuted, marginTop: spacing(1), lineHeight: 20 },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' },
-    dayLabel: { fontSize: 15, fontWeight: '700', color: colors.primaryDark },
+    dayLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colors.textMuted },
     badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     batchRow: { flexDirection: 'row', alignItems: 'center', gap: 4, width: '100%', marginTop: 2 },
     lockBadge: { fontSize: 12, fontWeight: '700', color: colors.primaryDark },
@@ -390,10 +418,10 @@ const makeStyles = (colors: Palette) =>
     batchBadge: { fontSize: 11, fontWeight: '700', color: colors.accent },
     mainRow: { flexDirection: 'row', marginTop: spacing(2), alignItems: 'flex-start' },
     thumb: {
-      width: 46,
-      height: 46,
-      borderRadius: 12,
-      backgroundColor: colors.chipBg,
+      width: 54,
+      height: 54,
+      borderRadius: 16,
+      backgroundColor: colors.primaryWash,
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: spacing(3),
