@@ -39,6 +39,8 @@ interface PlanContextValue {
   swapDays: (dateA: string, dateB: string) => void;
   makeLeftovers: (date: string) => void;
   clearLeftovers: (date: string) => void;
+  addDay: () => void;
+  maxHorizon: number;
   setShopped: (dates: string[], value: boolean) => void;
   history: HistoryEntry[];
   markMade: (date: string) => void;
@@ -62,9 +64,14 @@ function upcomingDates(count: number): string[] {
   return out;
 }
 
-// Walk the days in order, tracking recent proteins/cuisines for variety.
+const MAX_HORIZON = 14;
+
+// Walk the days in order, tracking recent proteins/cuisines for variety. The
+// horizon defaults to dinnersPerWeek but grows to fit an extended plan (added
+// days), so regenerating never shrinks a week you've planned further ahead.
 function buildWeek(prefs: Preferences, existing: DayPlan[], hist?: HistFilter): DayPlan[] {
-  const dates = upcomingDates(prefs.dinnersPerWeek);
+  const horizon = Math.min(MAX_HORIZON, Math.max(prefs.dinnersPerWeek, existing.length));
+  const dates = upcomingDates(horizon);
   const byDate = new Map(existing.map((d) => [d.date, d]));
   const recentProteins: string[] = [];
   const recentCuisines: string[] = [];
@@ -297,6 +304,22 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
         h.map((e) => (e.date === date ? { ...e, rating: e.rating === rating ? undefined : rating } : e)),
       ),
     history,
+    addDay: () =>
+      setPlan((cur) => {
+        if (cur.length >= MAX_HORIZON) return cur;
+        const lastDate = cur.length ? cur[cur.length - 1].date : todayISO();
+        const d = new Date(lastDate + 'T00:00:00');
+        d.setDate(d.getDate() + 1);
+        const date = d.toISOString().slice(0, 10);
+        const filter = buildHistFilter(history, todayISO());
+        const recent = cur.map((x) => recipeById(x.mainId)?.protein ?? '').filter(Boolean);
+        const meal = generateMeal(prefs, recent, [], undefined, prefs.goal === 'save', filter);
+        const day: DayPlan = meal
+          ? { date, mainId: meal.mainId, sideIds: meal.sideIds, locked: false, skipped: false, shopped: false }
+          : { date, mainId: '', sideIds: [], locked: false, skipped: true, shopped: false };
+        return [...cur, day];
+      }),
+    maxHorizon: MAX_HORIZON,
     setShopped: (dates, value) =>
       setPlan((cur) => cur.map((d) => (dates.includes(d.date) ? { ...d, shopped: value } : d))),
     setChecked: setCheckedState,

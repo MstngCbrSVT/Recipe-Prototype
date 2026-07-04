@@ -49,6 +49,8 @@ export function PlanScreen({ onOpenDay }: { onOpenDay: (date: string) => void })
     makeLeftovers,
     clearLeftovers,
     markMade,
+    addDay,
+    maxHorizon,
   } = usePlan();
   const [swapFrom, setSwapFrom] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<string | null>(null);
@@ -127,6 +129,15 @@ export function PlanScreen({ onOpenDay }: { onOpenDay: (date: string) => void })
           />
         );
       })}
+
+      {plan.length < maxHorizon ? (
+        <Pressable onPress={addDay} style={styles.addDay}>
+          <Icon name="plus" size={16} color={colors.primaryDark} strokeWidth={2} />
+          <Text style={styles.addDayText}>Add another day ({plan.length} of {maxHorizon})</Text>
+        </Pressable>
+      ) : (
+        <Text style={styles.horizonNote}>Two weeks planned — the max for now.</Text>
+      )}
     </ScrollView>
   );
 }
@@ -432,6 +443,20 @@ const makeStyles = (colors: Palette) =>
     },
     swapText: { color: colors.primaryDark, fontWeight: '600', fontSize: 13 },
     swapCancel: { color: colors.primary, fontWeight: '700', fontSize: 13 },
+    addDay: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing(2),
+      borderWidth: 1.5,
+      borderStyle: 'dashed',
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      paddingVertical: spacing(3),
+      marginTop: spacing(1),
+    },
+    addDayText: { color: colors.primaryDark, fontWeight: '800', fontSize: 14 },
+    horizonNote: { textAlign: 'center', color: colors.textMuted, fontSize: 13, marginTop: spacing(2), fontStyle: 'italic' },
     // shared-ingredient strip
     strip: { marginBottom: spacing(4), paddingBottom: spacing(3) },
     stripHead: { flexDirection: 'row', alignItems: 'center', gap: spacing(2), marginBottom: spacing(3) },
