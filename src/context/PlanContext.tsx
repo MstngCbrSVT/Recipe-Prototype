@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { DayPlan, HistoryEntry, Preferences, Rating } from '../types';
+import { DayPlan, HistoryEntry, Preferences, Rating, Recipe } from '../types';
 import { DEFAULT_SPOONACULAR_KEY } from '../config';
 import { generateMeal } from '../engine/planner';
 import { nextLeftoverTarget, sanitizeLeftovers } from '../engine/leftovers';
@@ -14,6 +14,8 @@ import {
   loadPrefs,
   loadRecipePool,
   saveChecked,
+  loadPhotos,
+  savePhotos,
   saveHistory,
   savePlan,
   savePrefs,
@@ -46,6 +48,9 @@ interface PlanContextValue {
   history: HistoryEntry[];
   markMade: (date: string) => void;
   rateMeal: (date: string, rating: Rating) => void;
+  photos: Record<string, string>;
+  setRecipePhoto: (recipeId: string, uri: string | null) => void;
+  photoFor: (recipe: Recipe | undefined) => string | undefined;
   setChecked: (checked: Record<string, boolean>) => void;
   recipeStatus: RecipeStatus;
   refreshRecipes: (overrideKey?: string) => Promise<void>;
@@ -145,6 +150,7 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
   const [plan, setPlan] = useState<DayPlan[]>([]);
   const [checked, setCheckedState] = useState<Record<string, boolean>>({});
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [photos, setPhotosState] = useState<Record<string, string>>({});
   const [recipeStatus, setRecipeStatus] = useState<RecipeStatus>({
     loading: false,
     message: null,
@@ -155,13 +161,15 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
   // Hydrate persisted state on first mount.
   useEffect(() => {
     (async () => {
-      const [p, pr, ch, pool, hist] = await Promise.all([
+      const [p, pr, ch, pool, hist, ph] = await Promise.all([
         loadPlan(),
         loadPrefs(),
         loadChecked(),
         loadRecipePool(),
         loadHistory(),
+        loadPhotos(),
       ]);
+      setPhotosState(ph);
       // Fall back to the key baked into .env.local (EXPO_PUBLIC_SPOONACULAR_KEY)
       // if the user hasn't entered one in Settings, so it "just works".
       const effectiveKey = (pr.spoonacularApiKey || DEFAULT_SPOONACULAR_KEY).trim();
@@ -220,6 +228,9 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (hydrated.current) saveHistory(history);
   }, [history]);
+  useEffect(() => {
+    if (hydrated.current) savePhotos(photos);
+  }, [photos]);
 
   const value: PlanContextValue = {
     ready,
@@ -356,6 +367,16 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
         h.map((e) => (e.date === date ? { ...e, rating: e.rating === rating ? undefined : rating } : e)),
       ),
     history,
+    photos,
+    setRecipePhoto: (recipeId, uri) =>
+      setPhotosState((cur) => {
+        const next = { ...cur };
+        if (uri) next[recipeId] = uri;
+        else delete next[recipeId];
+        return next;
+      }),
+    // A user photo wins over the provider photo/icon wherever the recipe shows.
+    photoFor: (recipe) => (recipe ? photos[recipe.id] ?? recipe.image : undefined),
     addDay: () =>
       setPlan((cur) => {
         if (cur.length >= MAX_HORIZON) return cur;

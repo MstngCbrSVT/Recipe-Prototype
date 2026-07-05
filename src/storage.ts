@@ -11,6 +11,7 @@ const KEYS = {
   pool: 'mealapp.recipepool.v1',
   theme: 'mealapp.thememode.v1',
   history: 'mealapp.history.v1',
+  photos: 'mealapp.userphotos.v1',
 };
 
 export const DEFAULT_PREFS: Preferences = {
@@ -64,6 +65,11 @@ export const saveChecked = (checked: Record<string, boolean>) => save(KEYS.check
 // spending more of the daily free-tier quota.
 export const loadRecipePool = () => load<Recipe[]>(KEYS.pool, []);
 export const saveRecipePool = (pool: Recipe[]) => save(KEYS.pool, pool);
+
+// User-supplied recipe photos, keyed by recipe id → compact JPEG data URI. These
+// override the provider photo (or icon) wherever the recipe appears.
+export const loadPhotos = () => load<Record<string, string>>(KEYS.photos, {});
+export const savePhotos = (photos: Record<string, string>) => save(KEYS.photos, photos);
 
 // Theme preference: 'auto' follows the phone's light/dark setting. Defaults to
 // 'light' so first launch is always the light identity until the user opts in.

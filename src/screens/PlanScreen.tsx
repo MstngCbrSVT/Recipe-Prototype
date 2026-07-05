@@ -255,6 +255,7 @@ function DayCard({
   onMade: () => void;
 }) {
   const { colors } = useTheme();
+  const { photoFor } = usePlan();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const isLeftover = !!day.leftoverOf;
   const mode = dayModeOf(day);
@@ -338,7 +339,7 @@ function DayCard({
       ) : isLeftover ? (
         <Pressable onPress={onOpen}>
           <View style={styles.mainRow}>
-            <Thumb image={main?.image} icon={main ? recipeIconName(main) : 'refresh'} styles={styles} colors={colors} />
+            <Thumb image={photoFor(main)} icon={main ? recipeIconName(main) : 'refresh'} styles={styles} colors={colors} />
             <View style={{ flex: 1 }}>
               <Text style={styles.mainTitle}>{main?.title ?? 'Leftovers'}</Text>
               <Text style={styles.sides}>
@@ -350,7 +351,7 @@ function DayCard({
       ) : main ? (
         <Pressable onPress={onOpen}>
           <View style={styles.mainRow}>
-            <Thumb image={main.image} icon={recipeIconName(main)} styles={styles} colors={colors} />
+            <Thumb image={photoFor(main)} icon={recipeIconName(main)} styles={styles} colors={colors} />
             <View style={{ flex: 1 }}>
               <Text style={styles.mainTitle}>{main.title}</Text>
               <Text style={styles.sides}>

@@ -34,6 +34,7 @@ export type IconName =
   | 'key'
   | 'plus'
   | 'minus'
+  | 'camera'
   | 'thumbUp'
   | 'thumbDown'
   // food categories (recipe tiles)
@@ -289,6 +290,13 @@ function glyph(name: IconName, s: S, color: string): React.ReactNode {
       return <Path {...s} strokeWidth={2.2} d="M12 5v14M5 12h14" />;
     case 'minus':
       return <Path {...s} strokeWidth={2.2} d="M5 12h14" />;
+    case 'camera':
+      return (
+        <>
+          <Path {...s} d="M4 8.5h3l1.4-2h7.2L17 8.5h3a1 1 0 0 1 1 1V18a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5a1 1 0 0 1 1-1z" />
+          <Circle {...s} cx={12} cy={13} r={3.2} />
+        </>
+      );
     case 'thumbUp':
       return (
         <>

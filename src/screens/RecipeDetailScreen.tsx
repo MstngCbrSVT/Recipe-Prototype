@@ -6,6 +6,7 @@ import { recipeById } from '../data/catalog';
 import { findVideos } from '../data/influencers';
 import { buildTimeline } from '../engine/timeline';
 import { mealActiveMinutes } from '../engine/planner';
+import { pickRecipePhoto } from '../engine/photos';
 import { Button, Card } from '../ui/components';
 import { Icon, recipeIconName } from '../ui/Icon';
 import { Palette, radius, spacing } from '../ui/theme';
@@ -14,8 +15,13 @@ import { useTheme } from '../ui/ThemeContext';
 export function RecipeDetailScreen({ date, onClose }: { date: string; onClose: () => void }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const { plan, prefs } = usePlan();
+  const { plan, prefs, photos, photoFor, setRecipePhoto } = usePlan();
   const day = plan.find((d) => d.date === date);
+
+  async function choosePhoto(recipeId: string) {
+    const uri = await pickRecipePhoto();
+    if (uri) setRecipePhoto(recipeId, uri);
+  }
 
   if (!day || !day.mainId) {
     return (
@@ -36,10 +42,22 @@ export function RecipeDetailScreen({ date, onClose }: { date: string; onClose: (
     <View style={styles.container}>
       <Header onClose={onClose} />
       <ScrollView contentContainerStyle={{ padding: spacing(4), paddingBottom: spacing(20) }}>
-        {/* Hero photo of the main dish, when we have one */}
-        {recipes[0]?.image && (
-          <Image source={{ uri: recipes[0].image }} style={styles.hero} resizeMode="cover" />
-        )}
+        {/* Hero photo of the main dish — tap to add or change your own */}
+        {recipes[0] &&
+          (photoFor(recipes[0]) ? (
+            <View style={styles.heroWrap}>
+              <Image source={{ uri: photoFor(recipes[0]) }} style={styles.hero} resizeMode="cover" />
+              <Pressable style={styles.heroBtn} onPress={() => choosePhoto(recipes[0].id)}>
+                <Icon name="camera" size={14} color="#fff" strokeWidth={2} />
+                <Text style={styles.heroBtnText}>Change photo</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable style={styles.heroEmpty} onPress={() => choosePhoto(recipes[0].id)}>
+              <Icon name="camera" size={22} color={colors.primary} strokeWidth={2} />
+              <Text style={styles.heroEmptyText}>Add a photo</Text>
+            </Pressable>
+          ))}
 
         {/* Whole-meal summary */}
         <Card style={{ marginBottom: spacing(4), backgroundColor: colors.primary }}>
@@ -93,13 +111,13 @@ export function RecipeDetailScreen({ date, onClose }: { date: string; onClose: (
         {recipes.map((r) => (
           <Card key={r.id} style={{ marginTop: spacing(3) }}>
             <View style={styles.recipeHeader}>
-              <View style={styles.recipeThumb}>
-                {r.image ? (
-                  <Image source={{ uri: r.image }} style={styles.recipeThumbImg} resizeMode="cover" />
+              <Pressable style={styles.recipeThumb} onPress={() => choosePhoto(r.id)}>
+                {photoFor(r) ? (
+                  <Image source={{ uri: photoFor(r) }} style={styles.recipeThumbImg} resizeMode="cover" />
                 ) : (
                   <Icon name={recipeIconName(r)} size={22} color={colors.primary} />
                 )}
-              </View>
+              </Pressable>
               <View style={{ flex: 1 }}>
                 <Text style={styles.recipeTitle}>{r.title}</Text>
                 <Text style={styles.recipeMeta}>
@@ -107,7 +125,16 @@ export function RecipeDetailScreen({ date, onClose }: { date: string; onClose: (
                   {r.role === 'side' && r.sideType ? ` · ${r.sideType}` : ''}
                 </Text>
               </View>
+              <Pressable onPress={() => choosePhoto(r.id)} hitSlop={8} style={styles.photoBtn}>
+                <Icon name="camera" size={16} color={colors.primaryDark} strokeWidth={2} />
+                <Text style={styles.photoBtnText}>{photos[r.id] ? 'Change' : 'Add'}</Text>
+              </Pressable>
             </View>
+            {photos[r.id] && (
+              <Pressable onPress={() => setRecipePhoto(r.id, null)} hitSlop={6}>
+                <Text style={styles.removePhoto}>Remove my photo</Text>
+              </Pressable>
+            )}
 
             {r.source?.creator && (
               <Pressable
@@ -207,19 +234,49 @@ const makeStyles = (colors: Palette) =>
     sectionHead: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
     sectionTitle: { fontSize: 20, fontWeight: '800', color: colors.text },
     sectionSub: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+    heroWrap: { marginBottom: spacing(4), position: 'relative' },
     hero: {
       width: '100%',
       height: 200,
       borderRadius: radius.lg,
-      marginBottom: spacing(4),
       backgroundColor: colors.chipBg,
     },
+    heroBtn: {
+      position: 'absolute',
+      right: spacing(3),
+      bottom: spacing(3),
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: 'rgba(0,0,0,0.55)',
+      paddingVertical: 7,
+      paddingHorizontal: spacing(3),
+      borderRadius: 999,
+    },
+    heroBtnText: { color: '#fff', fontWeight: '700', fontSize: 12.5 },
+    heroEmpty: {
+      width: '100%',
+      height: 140,
+      borderRadius: radius.lg,
+      marginBottom: spacing(4),
+      backgroundColor: colors.primaryWash,
+      borderWidth: 1.5,
+      borderStyle: 'dashed',
+      borderColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 6,
+    },
+    heroEmptyText: { color: colors.primary, fontWeight: '700', fontSize: 14 },
     recipeThumb: {
       width: 42, height: 42, borderRadius: 11, backgroundColor: colors.chipBg,
       alignItems: 'center', justifyContent: 'center', marginRight: spacing(2),
       overflow: 'hidden',
     },
     recipeThumbImg: { width: '100%', height: '100%', borderRadius: 11 },
+    photoBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingLeft: spacing(2) },
+    photoBtnText: { color: colors.primaryDark, fontWeight: '700', fontSize: 12.5 },
+    removePhoto: { color: colors.textMuted, fontWeight: '600', fontSize: 12.5, marginTop: spacing(2) },
     videoThumb: {
       width: 40, height: 40, borderRadius: 11, backgroundColor: colors.chipBg,
       alignItems: 'center', justifyContent: 'center', marginRight: spacing(3),
