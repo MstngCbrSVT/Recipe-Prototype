@@ -70,6 +70,8 @@ export interface Recipe {
   id: string;
   title: string;
   emoji: string;
+  image?: string; // photo URL when available (Spoonacular); local recipes use the icon
+
   role: 'main' | 'side';
   sideType?: SideType; // present when role === 'side'
   protein?: Protein; // present when role === 'main'

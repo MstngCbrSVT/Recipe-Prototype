@@ -112,6 +112,7 @@ export async function fetchRecipePool(
 interface SpoonResult {
   id: number;
   title: string;
+  image?: string; // full CDN url, e.g. https://img.spoonacular.com/recipes/{id}-480x360.jpg
   readyInMinutes?: number;
   servings?: number;
   dishTypes?: string[];
@@ -150,6 +151,8 @@ function normalize(r: SpoonResult, role: 'main' | 'side'): Recipe | null {
     id: `sp-${r.id}`,
     title: r.title,
     emoji: pickEmoji(role, protein, sideType),
+    // Prefer the URL the API returns; otherwise build the canonical CDN path.
+    image: r.image?.startsWith('http') ? r.image : `https://img.spoonacular.com/recipes/${r.id}-480x360.jpg`,
     role,
     sideType,
     protein,

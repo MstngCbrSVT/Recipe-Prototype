@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { usePlan, dayModeOf, DayMode } from '../context/PlanContext';
 import { recipeById } from '../data/catalog';
 import { mealActiveMinutes, mealTotalMinutes } from '../engine/planner';
@@ -338,9 +338,7 @@ function DayCard({
       ) : isLeftover ? (
         <Pressable onPress={onOpen}>
           <View style={styles.mainRow}>
-            <View style={styles.thumb}>
-              <Icon name={main ? recipeIconName(main) : 'refresh'} size={24} color={colors.primary} />
-            </View>
+            <Thumb image={main?.image} icon={main ? recipeIconName(main) : 'refresh'} styles={styles} colors={colors} />
             <View style={{ flex: 1 }}>
               <Text style={styles.mainTitle}>{main?.title ?? 'Leftovers'}</Text>
               <Text style={styles.sides}>
@@ -352,9 +350,7 @@ function DayCard({
       ) : main ? (
         <Pressable onPress={onOpen}>
           <View style={styles.mainRow}>
-            <View style={styles.thumb}>
-              <Icon name={recipeIconName(main)} size={24} color={colors.primary} />
-            </View>
+            <Thumb image={main.image} icon={recipeIconName(main)} styles={styles} colors={colors} />
             <View style={{ flex: 1 }}>
               <Text style={styles.mainTitle}>{main.title}</Text>
               <Text style={styles.sides}>
@@ -404,6 +400,30 @@ function DayCard({
         </View>
       )}
     </Card>
+  );
+}
+
+// A recipe photo in a squircle; falls back to the line-icon when there's no
+// image (built-in recipes) or while a remote photo is still loading.
+function Thumb({
+  image,
+  icon,
+  styles,
+  colors,
+}: {
+  image?: string;
+  icon: IconName;
+  styles: Styles;
+  colors: Palette;
+}) {
+  return (
+    <View style={styles.thumb}>
+      {image ? (
+        <Image source={{ uri: image }} style={styles.thumbImg} resizeMode="cover" />
+      ) : (
+        <Icon name={icon} size={24} color={colors.primary} />
+      )}
+    </View>
   );
 }
 
@@ -505,7 +525,9 @@ const makeStyles = (colors: Palette) =>
       alignItems: 'center',
       justifyContent: 'center',
       marginRight: spacing(3),
+      overflow: 'hidden',
     },
+    thumbImg: { width: '100%', height: '100%', borderRadius: 16 },
     mainTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
     sides: { fontSize: 14, color: colors.textMuted, marginTop: spacing(1) },
     metaRow: { flexDirection: 'row', marginTop: spacing(2), flexWrap: 'wrap' },

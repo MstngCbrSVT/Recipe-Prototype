@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { usePlan } from '../context/PlanContext';
 import { Recipe } from '../types';
 import { recipeById } from '../data/catalog';
@@ -36,6 +36,11 @@ export function RecipeDetailScreen({ date, onClose }: { date: string; onClose: (
     <View style={styles.container}>
       <Header onClose={onClose} />
       <ScrollView contentContainerStyle={{ padding: spacing(4), paddingBottom: spacing(20) }}>
+        {/* Hero photo of the main dish, when we have one */}
+        {recipes[0]?.image && (
+          <Image source={{ uri: recipes[0].image }} style={styles.hero} resizeMode="cover" />
+        )}
+
         {/* Whole-meal summary */}
         <Card style={{ marginBottom: spacing(4), backgroundColor: colors.primary }}>
           <Text style={styles.summaryTitle}>The whole meal</Text>
@@ -89,7 +94,11 @@ export function RecipeDetailScreen({ date, onClose }: { date: string; onClose: (
           <Card key={r.id} style={{ marginTop: spacing(3) }}>
             <View style={styles.recipeHeader}>
               <View style={styles.recipeThumb}>
-                <Icon name={recipeIconName(r)} size={22} color={colors.primary} />
+                {r.image ? (
+                  <Image source={{ uri: r.image }} style={styles.recipeThumbImg} resizeMode="cover" />
+                ) : (
+                  <Icon name={recipeIconName(r)} size={22} color={colors.primary} />
+                )}
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.recipeTitle}>{r.title}</Text>
@@ -198,10 +207,19 @@ const makeStyles = (colors: Palette) =>
     sectionHead: { flexDirection: 'row', alignItems: 'center', gap: spacing(2) },
     sectionTitle: { fontSize: 20, fontWeight: '800', color: colors.text },
     sectionSub: { fontSize: 13, color: colors.textMuted, marginTop: 2 },
+    hero: {
+      width: '100%',
+      height: 200,
+      borderRadius: radius.lg,
+      marginBottom: spacing(4),
+      backgroundColor: colors.chipBg,
+    },
     recipeThumb: {
       width: 42, height: 42, borderRadius: 11, backgroundColor: colors.chipBg,
       alignItems: 'center', justifyContent: 'center', marginRight: spacing(2),
+      overflow: 'hidden',
     },
+    recipeThumbImg: { width: '100%', height: '100%', borderRadius: 11 },
     videoThumb: {
       width: 40, height: 40, borderRadius: 11, backgroundColor: colors.chipBg,
       alignItems: 'center', justifyContent: 'center', marginRight: spacing(3),
