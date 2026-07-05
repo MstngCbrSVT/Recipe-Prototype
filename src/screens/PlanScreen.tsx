@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { usePlan } from '../context/PlanContext';
+import { usePlan, dayModeOf, DayMode } from '../context/PlanContext';
 import { recipeById } from '../data/catalog';
 import { mealActiveMinutes, mealTotalMinutes } from '../engine/planner';
 import { canMakeLeftovers, dependentsOf } from '../engine/leftovers';
@@ -48,6 +48,7 @@ export function PlanScreen({ onOpenDay }: { onOpenDay: (date: string) => void })
     swapDays,
     makeLeftovers,
     clearLeftovers,
+    setDayMode,
     markMade,
     addDay,
     maxHorizon,
@@ -56,6 +57,10 @@ export function PlanScreen({ onOpenDay }: { onOpenDay: (date: string) => void })
   const [highlight, setHighlight] = useState<string | null>(null);
   const shared = useMemo(() => computeShared(plan), [plan]);
   const today = todayISO();
+
+  const nCook = plan.filter((d) => dayModeOf(d) === 'cook' && !!d.mainId).length;
+  const nLeft = plan.filter((d) => dayModeOf(d) === 'leftover').length;
+  const nOut = plan.filter((d) => dayModeOf(d) === 'out').length;
 
   function handleSwapPress(date: string) {
     if (swapFrom === null) {
@@ -82,6 +87,26 @@ export function PlanScreen({ onOpenDay }: { onOpenDay: (date: string) => void })
       <View style={{ marginVertical: spacing(3) }}>
         <Button label="Regenerate whole week" icon="dice" onPress={generateWeek} variant="secondary" />
       </View>
+
+      <View style={styles.summary}>
+        <View style={styles.stat}>
+          <Text style={[styles.statN, { color: colors.primary }]}>{nCook}</Text>
+          <Text style={styles.statL}>Cook</Text>
+        </View>
+        <View style={styles.stat}>
+          <Text style={[styles.statN, { color: colors.accent }]}>{nLeft}</Text>
+          <Text style={styles.statL}>Leftovers</Text>
+        </View>
+        <View style={styles.stat}>
+          <Text style={[styles.statN, { color: colors.textMuted }]}>{nOut}</Text>
+          <Text style={styles.statL}>Out</Text>
+        </View>
+      </View>
+      <Text style={styles.summaryHint}>
+        {nCook > 0
+          ? `You'll shop for ${nCook} meal${nCook !== 1 ? 's' : ''} — leftovers and out nights add nothing to the list. Set any day below.`
+          : 'Tap Cook · Leftovers · Out on any day to shape your week yourself.'}
+      </Text>
 
       {shared.threads.length > 0 && (
         <SharedStrip
@@ -126,6 +151,7 @@ export function PlanScreen({ onOpenDay }: { onOpenDay: (date: string) => void })
             onSwap={() => handleSwapPress(day.date)}
             onMakeLeftovers={() => makeLeftovers(day.date)}
             onCookFresh={() => clearLeftovers(day.date)}
+            onSetMode={(m) => setDayMode(day.date, m)}
             onMade={() => markMade(day.date)}
           />
         );
@@ -206,6 +232,7 @@ function DayCard({
   onSwap,
   onMakeLeftovers,
   onCookFresh,
+  onSetMode,
   onMade,
 }: {
   day: DayPlan;
@@ -224,11 +251,13 @@ function DayCard({
   onSwap: () => void;
   onMakeLeftovers: () => void;
   onCookFresh: () => void;
+  onSetMode: (mode: DayMode) => void;
   onMade: () => void;
 }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const isLeftover = !!day.leftoverOf;
+  const mode = dayModeOf(day);
   const main = isLeftover ? recipeById(source?.mainId ?? '') : recipeById(day.mainId);
   const total = mealTotalMinutes(day.mainId, day.sideIds);
   const active = mealActiveMinutes(day.mainId, day.sideIds);
@@ -275,6 +304,32 @@ function DayCard({
           </View>
         )}
       </View>
+
+      {day.locked ? null : (
+        <View style={styles.seg}>
+          {(['cook', 'leftover', 'out'] as DayMode[]).map((m) => {
+            const on = mode === m;
+            const tint = m === 'cook' ? colors.primary : m === 'leftover' ? colors.accent : colors.textMuted;
+            return (
+              <Pressable
+                key={m}
+                onPress={() => onSetMode(m)}
+                style={[styles.segItem, on && { backgroundColor: colors.card }]}
+              >
+                <Icon
+                  name={m === 'cook' ? 'pot' : m === 'leftover' ? 'refresh' : 'ban'}
+                  size={14}
+                  color={on ? tint : colors.textMuted}
+                  strokeWidth={2}
+                />
+                <Text style={[styles.segText, { color: on ? tint : colors.textMuted }]}>
+                  {m === 'cook' ? 'Cook' : m === 'leftover' ? 'Leftovers' : 'Out'}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
 
       {day.skipped ? (
         <View style={{ paddingVertical: spacing(2) }}>
@@ -331,38 +386,23 @@ function DayCard({
         </View>
       )}
 
-      <View style={styles.actions}>
-        {isLeftover ? (
-          <>
-            <ActionBtn label="Cook fresh instead" icon="chef" onPress={onCookFresh} />
-            <ActionBtn label="Skip" icon="ban" onPress={onSkip} tone="muted" />
-          </>
-        ) : (
-          <>
-            <ActionBtn
-              label={day.locked ? 'Unlock' : 'Lock'}
-              icon={day.locked ? 'unlock' : 'lock'}
-              onPress={onLock}
-            />
-            {!day.skipped && !day.locked && (
+      {(day.locked || mode === 'cook') && (
+        <View style={styles.actions}>
+          <ActionBtn
+            label={day.locked ? 'Unlock' : 'Lock'}
+            icon={day.locked ? 'unlock' : 'lock'}
+            onPress={onLock}
+          />
+          {!day.locked && mode === 'cook' && (
+            <>
               <ActionBtn label="New" icon="dice" onPress={onRegenerate} />
-            )}
-            {canExtend && <ActionBtn label="Make extra" icon="pot" onPress={onMakeLeftovers} />}
-            {!day.locked && (
+              {canExtend && <ActionBtn label="Make extra" icon="pot" onPress={onMakeLeftovers} />}
               <ActionBtn label={swapActive ? 'Picking…' : 'Swap'} icon="swap" onPress={onSwap} />
-            )}
-            {canLog && !day.skipped && (
-              <ActionBtn label="Made it" icon="check" onPress={onMade} tone="accent" />
-            )}
-            <ActionBtn
-              label={day.skipped ? 'Add meal' : 'Skip'}
-              icon={day.skipped ? 'plus' : 'ban'}
-              onPress={onSkip}
-              tone="muted"
-            />
-          </>
-        )}
-      </View>
+              {canLog && <ActionBtn label="Made it" icon="check" onPress={onMade} tone="accent" />}
+            </>
+          )}
+        </View>
+      )}
     </Card>
   );
 }
@@ -409,6 +449,46 @@ const makeStyles = (colors: Palette) =>
     },
     h1: { fontSize: 32, fontWeight: '700', letterSpacing: -0.8, color: colors.text },
     sub: { fontSize: 14, color: colors.textMuted, marginTop: spacing(1), lineHeight: 20 },
+    // week summary (Cook / Leftovers / Out)
+    summary: { flexDirection: 'row', gap: spacing(2) },
+    stat: {
+      flex: 1,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      paddingVertical: spacing(3),
+      alignItems: 'center',
+    },
+    statN: { fontSize: 22, fontWeight: '800' },
+    statL: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: 0.4,
+      marginTop: 2,
+    },
+    summaryHint: { fontSize: 12.5, color: colors.textMuted, marginTop: spacing(2), marginBottom: spacing(3), lineHeight: 18 },
+    // per-day Cook/Leftovers/Out segmented control
+    seg: {
+      flexDirection: 'row',
+      backgroundColor: colors.chipBg,
+      borderRadius: radius.sm,
+      padding: 3,
+      gap: 3,
+      marginTop: spacing(2),
+    },
+    segItem: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 5,
+      paddingVertical: 7,
+      borderRadius: radius.sm - 3,
+    },
+    segText: { fontSize: 12.5, fontWeight: '700' },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' },
     dayLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colors.textMuted },
     badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },

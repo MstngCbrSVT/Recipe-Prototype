@@ -39,6 +39,7 @@ interface PlanContextValue {
   swapDays: (dateA: string, dateB: string) => void;
   makeLeftovers: (date: string) => void;
   clearLeftovers: (date: string) => void;
+  setDayMode: (date: string, mode: DayMode) => void;
   addDay: () => void;
   maxHorizon: number;
   setShopped: (dates: string[], value: boolean) => void;
@@ -48,6 +49,15 @@ interface PlanContextValue {
   setChecked: (checked: Record<string, boolean>) => void;
   recipeStatus: RecipeStatus;
   refreshRecipes: (overrideKey?: string) => Promise<void>;
+}
+
+export type DayMode = 'cook' | 'leftover' | 'out';
+
+// How a given day is currently set — drives the per-day Cook/Leftovers/Out picker.
+export function dayModeOf(d: DayPlan): DayMode {
+  if (d.leftoverOf) return 'leftover';
+  if (d.skipped) return 'out';
+  return 'cook';
 }
 
 const PlanContext = createContext<PlanContextValue | null>(null);
@@ -290,6 +300,48 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
             return meal
               ? { ...d, leftoverOf: undefined, mainId: meal.mainId, sideIds: meal.sideIds, shopped: false }
               : { ...d, leftoverOf: undefined, skipped: true };
+          }),
+          prefs,
+        ),
+      );
+    },
+    setDayMode: (date, mode) => {
+      const filter = buildHistFilter(history, todayISO());
+      setPlan((cur) =>
+        sanitizeLeftovers(
+          cur.map((d) => {
+            if (d.date !== date || d.locked) return d;
+            if (mode === 'out') {
+              return { ...d, skipped: true, leftoverOf: undefined, mainId: '', sideIds: [] };
+            }
+            if (mode === 'leftover') {
+              // Link to the nearest earlier cook night; if there isn't one yet,
+              // leave the day as-is so we never make a dangling "leftovers".
+              const idx = cur.findIndex((x) => x.date === date);
+              let src: string | undefined;
+              for (let k = idx - 1; k >= 0; k--) {
+                const c = cur[k];
+                if (!c.skipped && !c.leftoverOf && c.mainId) {
+                  src = c.date;
+                  break;
+                }
+              }
+              if (!src) return d;
+              return { ...d, leftoverOf: src, skipped: false, mainId: '', sideIds: [], shopped: false };
+            }
+            // mode === 'cook' — restore a fresh meal if this day isn't already cooking.
+            if (!d.skipped && !d.leftoverOf && d.mainId) return d;
+            const recent = cur.map((x) => recipeById(x.mainId)?.protein ?? '').filter(Boolean);
+            const meal = generateMeal(prefs, recent, [], undefined, prefs.goal === 'save', filter);
+            if (!meal) return { ...d, skipped: false, leftoverOf: undefined };
+            return {
+              ...d,
+              leftoverOf: undefined,
+              skipped: false,
+              mainId: meal.mainId,
+              sideIds: meal.sideIds,
+              shopped: false,
+            };
           }),
           prefs,
         ),

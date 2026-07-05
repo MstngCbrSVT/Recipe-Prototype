@@ -14,7 +14,7 @@ const ThemeCtx = createContext<ThemeValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const system = useColorScheme(); // 'light' | 'dark' | null, from the OS
-  const [mode, setModeState] = useState<ThemeMode>('auto');
+  const [mode, setModeState] = useState<ThemeMode>('light');
 
   useEffect(() => {
     (async () => setModeState(await loadThemeMode()))();

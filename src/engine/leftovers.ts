@@ -33,21 +33,22 @@ export function canMakeLeftovers(plan: DayPlan[], date: string): boolean {
 
 // Validate every leftover reference and repair broken ones. A leftover day is
 // valid only if its source still exists, is cooking (not skipped, has a main),
-// isn't itself a leftover, and its main still reheats well. Orphaned days get a
-// fresh generated meal so the week is never left in a broken state.
+// and isn't itself a leftover. We deliberately do NOT require the source main to
+// be `leftoverFriendly` here: that gate governs auto-suggesting "Make extra"
+// (see canMakeLeftovers), but when the user explicitly marks a day as leftovers
+// their choice is honored. Orphaned days get a fresh generated meal so the week
+// is never left in a broken state.
 export function sanitizeLeftovers(days: DayPlan[], prefs: Preferences): DayPlan[] {
   const byDate = new Map(days.map((d) => [d.date, d]));
   return days.map((d) => {
     if (!d.leftoverOf) return d;
     const src = byDate.get(d.leftoverOf);
-    const srcMain = src ? recipeById(src.mainId) : undefined;
     const valid =
       !!src &&
       src.date !== d.date &&
       !src.skipped &&
       !src.leftoverOf &&
-      !!src.mainId &&
-      !!srcMain?.leftoverFriendly;
+      !!src.mainId;
     if (valid) return d;
     // Repair: turn this back into a freshly cooked meal (needs shopping again).
     const meal = generateMeal(prefs, [], []);

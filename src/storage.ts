@@ -65,9 +65,10 @@ export const saveChecked = (checked: Record<string, boolean>) => save(KEYS.check
 export const loadRecipePool = () => load<Recipe[]>(KEYS.pool, []);
 export const saveRecipePool = (pool: Recipe[]) => save(KEYS.pool, pool);
 
-// Theme preference: 'auto' follows the phone's light/dark setting.
+// Theme preference: 'auto' follows the phone's light/dark setting. Defaults to
+// 'light' so first launch is always the light identity until the user opts in.
 export type ThemeMode = 'auto' | 'light' | 'dark';
-export const loadThemeMode = () => load<ThemeMode>(KEYS.theme, 'auto');
+export const loadThemeMode = () => load<ThemeMode>(KEYS.theme, 'light');
 export const saveThemeMode = (mode: ThemeMode) => save(KEYS.theme, mode);
 
 // Cook history (meals made + ratings), persisted across weeks.
