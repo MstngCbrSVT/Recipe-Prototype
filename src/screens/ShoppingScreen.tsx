@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { usePlan } from '../context/PlanContext';
 import { recipeById } from '../data/catalog';
-import { AISLE_ORDER, buildShoppingList, itemKey } from '../engine/shopping';
+import { AISLE_ORDER, buildShoppingList, formatQty, itemKey } from '../engine/shopping';
 import { DayPlan } from '../types';
 import { Button, Card } from '../ui/components';
 import { Icon } from '../ui/Icon';
@@ -86,7 +86,7 @@ export function ShoppingScreen() {
                       {item.checked && <Icon name="check" size={14} color={colors.onAccent} strokeWidth={3} />}
                     </View>
                     <Text style={[styles.itemText, item.checked && styles.itemChecked]}>
-                      {formatQty(item.qty)} {item.unit} {item.name}
+                      {[formatQty(item.qty), item.unit, item.name].filter(Boolean).join(' ')}
                     </Text>
                   </Pressable>
                 );
@@ -136,11 +136,6 @@ export function ShoppingScreen() {
       )}
     </ScrollView>
   );
-}
-
-function formatQty(n: number): string {
-  if (Number.isInteger(n)) return String(n);
-  return n.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
 }
 
 const makeStyles = (colors: Palette) =>
