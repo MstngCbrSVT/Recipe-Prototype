@@ -45,7 +45,7 @@ function Shell() {
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       <View style={styles.brandBar}>
         <Icon name="sprout" size={20} color={colors.primary} />
-        <Text style={styles.brand}>MealMate</Text>
+        <Text style={styles.brand}>MealMate 2</Text>
       </View>
 
       <View style={{ flex: 1 }}>

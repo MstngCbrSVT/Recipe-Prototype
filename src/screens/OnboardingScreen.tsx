@@ -102,7 +102,7 @@ export function OnboardingScreen() {
       {/* header */}
       <View style={styles.brand}>
         <Icon name="sprout" size={18} color={colors.primary} />
-        <Text style={styles.brandText}>MealMate</Text>
+        <Text style={styles.brandText}>MealMate 2</Text>
       </View>
       <View style={styles.topRow}>
         <Pressable onPress={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0} hitSlop={8}>
