@@ -22,6 +22,15 @@
       "favicon": "./assets/favicon.png",
       "output": "single"
     },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "MealMate lets you add your own photo to a recipe.",
+          "cameraPermission": "MealMate lets you snap a photo of your dish."
+        }
+      ]
+    ],
     "experiments": {
       "baseUrl": "/Recipe-Prototype"
     }

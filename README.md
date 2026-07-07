@@ -7,13 +7,26 @@ automatically. Built to run in **Expo Go** with zero backend and zero API keys.
 ## Run it in Expo Go
 
 1. Install the **Expo Go** app on your phone (iOS App Store / Google Play).
-2. In this folder:
+2. Get the code and install dependencies:
    ```bash
+   git clone https://github.com/MstngCbrSVT/Recipe-Prototype.git
+   cd Recipe-Prototype
+   git checkout claude/meal-planning-app-features-o9hpdc
    npm install
+   ```
+3. *(Optional)* add your Spoonacular key so live recipes (with photos) load
+   automatically — otherwise the built-in library is used and you can paste a
+   key later under **Prefs**:
+   ```bash
+   cp .env.example .env.local   # then edit .env.local and set your key
+   ```
+4. Start the dev server and scan the QR code with your phone
+   (iOS: Camera app · Android: the Expo Go app's scanner):
+   ```bash
    npx expo start
    ```
-3. Scan the QR code in the terminal with your phone
-   (iOS: Camera app · Android: the Expo Go app's scanner).
+   Your phone and computer must be on the **same Wi‑Fi**. On a locked-down or
+   guest network, use a tunnel: `npx expo start --tunnel`.
 
 The app loads with a full week already generated — no sign-up, no setup.
 
