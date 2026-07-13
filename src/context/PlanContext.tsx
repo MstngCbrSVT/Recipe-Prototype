@@ -90,6 +90,8 @@ function buildWeek(prefs: Preferences, existing: DayPlan[], hist?: HistFilter): 
   const byDate = new Map(existing.map((d) => [d.date, d]));
   const recentProteins: string[] = [];
   const recentCuisines: string[] = [];
+  const usedMainIds: string[] = [];
+  const usedSideIds: string[] = [];
   const result: DayPlan[] = [];
   // Save-money: anchor ~60% of the week on one protein, then let the rest vary —
   // enough overlap to save real money without eating chicken seven nights running.
@@ -111,11 +113,15 @@ function buildWeek(prefs: Preferences, existing: DayPlan[], hist?: HistFilter): 
       result.push(prior);
       trackVariety(prior, recentProteins, recentCuisines);
       noteProtein(prior.mainId);
+      if (prior.mainId) usedMainIds.push(prior.mainId);
+      usedSideIds.push(...prior.sideIds);
       continue;
     }
     const reuse = prefs.goal === 'save' && anchor !== null && anchorCount < anchorTarget;
     const recentArg = reuse && anchor ? [anchor] : recentProteins;
-    const meal = generateMeal(prefs, recentArg, recentCuisines, undefined, reuse, hist);
+    const meal = generateMeal(
+      prefs, recentArg, recentCuisines, undefined, reuse, hist, usedMainIds, usedSideIds,
+    );
     if (!meal) {
       // No eligible recipe (over-constrained filters) — keep a skipped slot.
       result.push({ date, mainId: '', sideIds: [], locked: false, skipped: true, shopped: false });
@@ -132,6 +138,8 @@ function buildWeek(prefs: Preferences, existing: DayPlan[], hist?: HistFilter): 
     result.push(day);
     trackVariety(day, recentProteins, recentCuisines);
     noteProtein(day.mainId);
+    usedMainIds.push(day.mainId);
+    usedSideIds.push(...day.sideIds);
   }
   // A full reflow rebuilds every unlocked day from scratch, so leftover links
   // are dropped here; sanitize is a safety net for any left dangling.
@@ -142,6 +150,15 @@ function trackVariety(day: DayPlan, proteins: string[], cuisines: string[]): voi
   const main = recipeById(day.mainId);
   if (main?.protein) proteins.push(main.protein);
   if (main?.cuisine) cuisines.push(main.cuisine);
+}
+
+// Recipes already placed on other cooking days — so a single-day action (New,
+// Add day, Cook, Cook fresh) never reintroduces a dish another night already has.
+function usedElsewhere(plan: DayPlan[], exceptDate?: string): { mains: string[]; sides: string[] } {
+  const cooking = plan.filter(
+    (d) => d.date !== exceptDate && !d.leftoverOf && !d.skipped && d.mainId,
+  );
+  return { mains: cooking.map((d) => d.mainId), sides: cooking.flatMap((d) => d.sideIds) };
 }
 
 export function PlanProvider({ children }: { children: React.ReactNode }) {
@@ -249,18 +266,19 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
     },
     regenerateDay: (date) => {
       const filter = buildHistFilter(history, todayISO());
-      setPlan((cur) =>
-        sanitizeLeftovers(
+      setPlan((cur) => {
+        const used = usedElsewhere(cur, date);
+        return sanitizeLeftovers(
           cur.map((d) => {
             if (d.date !== date || d.locked || d.leftoverOf) return d;
-            const meal = generateMeal(prefs, [], [], d.mainId, false, filter);
+            const meal = generateMeal(prefs, [], [], d.mainId, false, filter, used.mains, used.sides);
             if (!meal) return d;
             // New meal → needs shopping again.
             return { ...d, mainId: meal.mainId, sideIds: meal.sideIds, skipped: false, shopped: false };
           }),
           prefs,
-        ),
-      );
+        );
+      });
     },
     toggleLock: (date) =>
       setPlan((cur) =>
@@ -303,23 +321,25 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
       }),
     clearLeftovers: (date) => {
       const filter = buildHistFilter(history, todayISO());
-      setPlan((cur) =>
-        sanitizeLeftovers(
+      setPlan((cur) => {
+        const used = usedElsewhere(cur, date);
+        return sanitizeLeftovers(
           cur.map((d) => {
             if (d.date !== date || !d.leftoverOf) return d;
-            const meal = generateMeal(prefs, [], [], undefined, false, filter);
+            const meal = generateMeal(prefs, [], [], undefined, false, filter, used.mains, used.sides);
             return meal
               ? { ...d, leftoverOf: undefined, mainId: meal.mainId, sideIds: meal.sideIds, shopped: false }
               : { ...d, leftoverOf: undefined, skipped: true };
           }),
           prefs,
-        ),
-      );
+        );
+      });
     },
     setDayMode: (date, mode) => {
       const filter = buildHistFilter(history, todayISO());
-      setPlan((cur) =>
-        sanitizeLeftovers(
+      setPlan((cur) => {
+        const used = usedElsewhere(cur, date);
+        return sanitizeLeftovers(
           cur.map((d) => {
             if (d.date !== date || d.locked) return d;
             if (mode === 'out') {
@@ -343,7 +363,7 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
             // mode === 'cook' — restore a fresh meal if this day isn't already cooking.
             if (!d.skipped && !d.leftoverOf && d.mainId) return d;
             const recent = cur.map((x) => recipeById(x.mainId)?.protein ?? '').filter(Boolean);
-            const meal = generateMeal(prefs, recent, [], undefined, prefs.goal === 'save', filter);
+            const meal = generateMeal(prefs, recent, [], undefined, prefs.goal === 'save', filter, used.mains, used.sides);
             if (!meal) return { ...d, skipped: false, leftoverOf: undefined };
             return {
               ...d,
@@ -355,8 +375,8 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
             };
           }),
           prefs,
-        ),
-      );
+        );
+      });
     },
     markMade: (date) => {
       const day = plan.find((d) => d.date === date);
@@ -386,7 +406,8 @@ export function PlanProvider({ children }: { children: React.ReactNode }) {
         const date = d.toISOString().slice(0, 10);
         const filter = buildHistFilter(history, todayISO());
         const recent = cur.map((x) => recipeById(x.mainId)?.protein ?? '').filter(Boolean);
-        const meal = generateMeal(prefs, recent, [], undefined, prefs.goal === 'save', filter);
+        const used = usedElsewhere(cur);
+        const meal = generateMeal(prefs, recent, [], undefined, prefs.goal === 'save', filter, used.mains, used.sides);
         const day: DayPlan = meal
           ? { date, mainId: meal.mainId, sideIds: meal.sideIds, locked: false, skipped: false, shopped: false }
           : { date, mainId: '', sideIds: [], locked: false, skipped: true, shopped: false };

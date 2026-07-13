@@ -75,12 +75,22 @@ export function generateMeal(
   avoidMainId?: string,
   preferReuse = false,
   hist?: HistFilter,
+  excludeMainIds: string[] = [],
+  excludeSideIds: string[] = [],
 ): GeneratedMeal | null {
   let mains = eligibleMains(prefs, hist);
   if (mains.length === 0) return null;
 
   if (avoidMainId && mains.length > 1) {
     mains = mains.filter((m) => m.id !== avoidMainId);
+  }
+
+  // Never place the same main twice in one week. A loved meal comes back in a
+  // FUTURE week via the recency system — not twice in the same plan. Fall back
+  // to the full set only if the week is longer than the eligible recipe pool.
+  if (excludeMainIds.length) {
+    const unused = mains.filter((m) => !excludeMainIds.includes(m.id));
+    if (unused.length > 0) mains = unused;
   }
 
   let pool: Recipe[];
@@ -116,9 +126,16 @@ export function generateMeal(
   const chosen: Recipe[] = [];
   const target = Math.max(1, prefs.sidesPerMeal);
 
+  // Softly prefer sides not already used elsewhere this week, so the same side
+  // doesn't turn up every night — but fall back when the roster is exhausted.
+  const preferFresh = (arr: Recipe[]): Recipe[] => {
+    const fresh = arr.filter((s) => !excludeSideIds.includes(s.id));
+    return fresh.length > 0 ? fresh : arr;
+  };
+
   // Guarantee at least one fresh side (vegetable / fruit / salad) if any exist.
-  const fresh = sides.filter((s) => s.sideType && FRESH_SIDE_TYPES.includes(s.sideType));
-  if (fresh.length > 0) chosen.push(pick(fresh));
+  const freshSides = sides.filter((s) => s.sideType && FRESH_SIDE_TYPES.includes(s.sideType));
+  if (freshSides.length > 0) chosen.push(pick(preferFresh(freshSides)));
 
   // Fill the rest, avoiding duplicate side types for balance.
   while (chosen.length < target) {
@@ -129,7 +146,7 @@ export function generateMeal(
     const fallback = sides.filter((s) => !chosen.some((c) => c.id === s.id));
     const source = remaining.length > 0 ? remaining : fallback;
     if (source.length === 0) break;
-    chosen.push(pick(source));
+    chosen.push(pick(preferFresh(source)));
   }
 
   return { mainId: main.id, sideIds: chosen.map((s) => s.id) };
